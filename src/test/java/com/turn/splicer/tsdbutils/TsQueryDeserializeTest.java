@@ -1,8 +1,5 @@
 package com.turn.splicer.tsdbutils;
 
-import com.turn.splicer.tsdbutils.TsQuery;
-import com.turn.splicer.tsdbutils.TsQuerySerializer;
-
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -13,8 +10,6 @@ import org.testng.annotations.Test;
 
 @Test
 public class TsQueryDeserializeTest {
-
-	private static final Logger LOG = LoggerFactory.getLogger(TsQueryDeserializeTest.class);
 
 	@Test(expectedExceptions = RuntimeException.class)
 	public void tryEmptyPostDeserialization() {
@@ -85,7 +80,6 @@ public class TsQueryDeserializeTest {
 		subQuery.setMetric("tsd.queries");
 		subQuery.setRate(true);
 		query.setQueries(new ArrayList<>(Collections.singleton(subQuery)));
-		LOG.info("{}", JSON.serializeToString(query));
 	}
 
 	@Test
@@ -106,8 +100,7 @@ public class TsQueryDeserializeTest {
 
 		long current = System.currentTimeMillis();
 		TsQuery slice = TsQuery.sliceOf(query, current - 3600, current);
-
-		LOG.info("Current={}, New Query = {}", current, JSON.serializeToString(slice));
+		Assert.assertEquals(slice.startTime(), current - 3600);
 	}
 
 }

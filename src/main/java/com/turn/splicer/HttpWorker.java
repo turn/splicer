@@ -1,13 +1,17 @@
 package com.turn.splicer;
 
+import com.turn.splicer.hbase.RegionChecker;
 import com.turn.splicer.tsdbutils.JSON;
 import com.turn.splicer.tsdbutils.TsQuery;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.google.common.io.Closeables;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
@@ -22,12 +26,16 @@ public class HttpWorker implements Callable<String> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(HttpWorker.class);
 
-	public static final LinkedBlockingQueue<String> TSDs = new LinkedBlockingQueue<>();
+	public static final Map<String, LinkedBlockingQueue<String>> TSDMap = new HashMap<>();
+
+	public static Random random = new Random();
 
 	private final TsQuery query;
+	private final RegionChecker checker;
 
-	public HttpWorker(TsQuery query) {
+	public HttpWorker(TsQuery query, RegionChecker checker) {
 		this.query = query;
+		this.checker = checker;
 	}
 
 	@Override
@@ -35,6 +43,23 @@ public class HttpWorker implements Callable<String> {
 	{
 		LOG.info("Start time={}, End time={}", Const.tsFormat(query.startTime()),
 				Const.tsFormat(query.endTime()));
+
+		String metricName = query.getQueries().get(0).getMetric();
+		String hostname = checker.getBestRegionHost(metricName,
+				query.startTime() / 1000, query.endTime() / 1000);
+		LOG.info("Found region server hostname={} for metric={}", hostname, metricName);
+
+		LinkedBlockingQueue<String> TSDs;
+		if (hostname == null) {
+			LOG.error("Could not find region server for metric={}", metricName);
+			return "{'error': 'Could not find region server for metric=" + metricName + "'}";
+		}
+
+		TSDs = TSDMap.get(hostname);
+		if (TSDs == null) {
+			LOG.error("We are not running TSDs on regionserver={}. Returning", hostname);
+			return "{'error': 'We are not running TSDs on regionserver=" + hostname + "'}";
+		}
 
 		String server = TSDs.take();
 		String uri = "http://" + server + "/api/query";

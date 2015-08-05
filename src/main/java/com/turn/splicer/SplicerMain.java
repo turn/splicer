@@ -1,5 +1,7 @@
 package com.turn.splicer;
 
+import java.util.concurrent.LinkedBlockingQueue;
+
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -18,17 +20,16 @@ public class SplicerMain {
 	private static final int PORT = 9000;
 
 	private static final int NUM_TSDS = 10;
-	private static final String TSD_HOST = "dwh-data012";
+	private static final String TSD_HOST = "dwh-data012.atl1.turn.com";
 
 	public static void main(String[] args) throws InterruptedException {
 
-		long d = System.currentTimeMillis();
-		LOG.info("{}", d - (3600 * 1000 * 24 * 7));
-		System.exit(0);
-
 		for (int i=0; i<NUM_TSDS; i++) {
 			String r = TSD_HOST + ":800" + i;
-			HttpWorker.TSDs.put(r);
+			if (HttpWorker.TSDMap.get(TSD_HOST) == null) {
+				HttpWorker.TSDMap.put(TSD_HOST, new LinkedBlockingQueue<String>());
+			}
+			HttpWorker.TSDMap.get(TSD_HOST).put(r);
 			LOG.info("Registering {}", r);
 		}
 

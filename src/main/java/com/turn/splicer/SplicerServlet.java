@@ -1,5 +1,9 @@
 package com.turn.splicer;
 
+import com.turn.splicer.hbase.RegionChecker;
+import com.turn.splicer.hbase.RegionUtil;
+import com.turn.splicer.merge.ResultsMerger;
+import com.turn.splicer.merge.TsdbResult;
 import com.turn.splicer.tsdbutils.TsQuery;
 import com.turn.splicer.tsdbutils.TsQuerySerializer;
 
@@ -28,6 +32,8 @@ public class SplicerServlet extends HttpServlet {
 	private static final int NUM_THREADS_PER_POOL = 10;
 
 	private static AtomicInteger POOL_NUMBER = new AtomicInteger(0);
+
+	private static RegionUtil REGION_UTIL = new RegionUtil();
 
 	private static ThreadFactoryBuilder THREAD_FACTORY_BUILDER = new ThreadFactoryBuilder()
 			.setDaemon(false)
@@ -64,7 +70,8 @@ public class SplicerServlet extends HttpServlet {
 	private void doGetWork(HttpServletRequest request, HttpServletResponse response)
 			throws IOException
 	{
-
+		LOG.info("GET (from remoteIp=" + request.getRemoteAddr() + ") is not yet supported");
+		response.getWriter().write("GET (from " + request.getRemoteAddr() + ") is not yet supported\n");
 	}
 
 	private void doPostWork(HttpServletRequest request, HttpServletResponse response)
@@ -89,24 +96,28 @@ public class SplicerServlet extends HttpServlet {
 				Const.tsFormat(tsQuery.startTime()),
 				Const.tsFormat(tsQuery.endTime()));
 
-		long duration = tsQuery.endTime() - tsQuery.startTime();
-		if (duration > TimeUnit.MILLISECONDS.convert(2, TimeUnit.HOURS)) {
-			Splicer splicer = new Splicer(tsQuery);
-			List<TsQuery> slices = splicer.sliceQuery();
-			parallelize(slices);
-		} else {
-			// only one query. run it in the servlet thread
-			HttpWorker worker = new HttpWorker(tsQuery);
-			try {
-				String res = worker.call();
-				LOG.info("Result for singleton query={}", res);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
+		try (RegionChecker checker = REGION_UTIL.getRegionChecker()) {
+			long duration = tsQuery.endTime() - tsQuery.startTime();
+			if (duration > TimeUnit.MILLISECONDS.convert(2, TimeUnit.HOURS)) {
+				Splicer splicer = new Splicer(tsQuery);
+				List<TsQuery> slices = splicer.sliceQuery();
+				String t = parallelize(slices, checker);
+				response.getWriter().write(t);
+				response.getWriter().flush();
+			} else {
+				// only one query. run it in the servlet thread
+				HttpWorker worker = new HttpWorker(tsQuery, checker);
+				try {
+					String res = worker.call();
+					LOG.info("Result for singleton query={}", res);
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
 			}
 		}
 	}
 
-	public void parallelize(List<TsQuery> slices)
+	public String parallelize(List<TsQuery> slices, RegionChecker checker)
 	{
 		String poolName = String.format("splice-pool-%d", POOL_NUMBER.incrementAndGet());
 
@@ -115,17 +126,31 @@ public class SplicerServlet extends HttpServlet {
 				.build();
 
 		ExecutorService svc = Executors.newFixedThreadPool(NUM_THREADS_PER_POOL, factory);
-
+		ResultsMerger merger = new ResultsMerger();
 		try {
 			List<Future<String>> results = new ArrayList<>();
 			for (TsQuery q : slices) {
-				results.add(svc.submit(new HttpWorker(q)));
+				results.add(svc.submit(new HttpWorker(q, checker)));
 			}
 
+			TsdbResult[] result = null;
 			for (Future<String> s: results) {
 				String json = s.get();
 				LOG.info("Got result={}", json);
+
+				if (result == null) {
+					result = TsdbResult.fromArray(json);
+				} else {
+					result = merger.merge(result, TsdbResult.fromArray(json));
+				}
 			}
+
+			if (result != null) {
+				return TsdbResult.toJson(result);
+			} else {
+				return "[]";
+			}
+
 		} catch (Exception e) {
 			LOG.error("Could not execute HTTP Queries", e);
 			throw new RuntimeException(e);
@@ -134,5 +159,4 @@ public class SplicerServlet extends HttpServlet {
 			LOG.info("Shutdown thread pool");
 		}
 	}
-
 }
