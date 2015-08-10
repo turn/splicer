@@ -1,5 +1,6 @@
 package com.turn.splicer.merge;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -52,9 +53,12 @@ public class TsdbResult {
 		}
 	}
 
+	@Nonnull
 	public static TsdbResult[] fromArray(String jsonArrayString) {
 		try {
-			return JSON_MAPPER.readValue(jsonArrayString, TsdbResult[].class);
+			TsdbResult[] tmp = JSON_MAPPER.readValue(jsonArrayString, TsdbResult[].class);
+			if (tmp == null) tmp = new TsdbResult[]{};
+			return tmp;
 		} catch (IOException e) {
 			throw new MergeException("Could not deserialize jsonString", e);
 		}

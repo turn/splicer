@@ -139,9 +139,15 @@ public class SplicerServlet extends HttpServlet {
 				LOG.info("Got result={}", json);
 
 				if (result == null) {
-					result = TsdbResult.fromArray(json);
+					TsdbResult[] tmp = TsdbResult.fromArray(json);
+					// set result to tmp iff there are some values
+					result = (tmp.length > 0 ? tmp : null);
 				} else {
-					result = merger.merge(result, TsdbResult.fromArray(json));
+					// we might receive no results for a particular time slot
+					TsdbResult[] tmp = TsdbResult.fromArray(json);
+					if (tmp.length > 0) {
+						result = merger.merge(result, tmp);
+					}
 				}
 			}
 
