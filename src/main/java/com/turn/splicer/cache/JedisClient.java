@@ -21,7 +21,7 @@ public class JedisClient {
 			new HostAndPort("127.0.0.1", 30005),
 			new HostAndPort("127.0.0.1", 30006)
 	};
-	private static final JedisCluster jc = new JedisCluster(
+	private static final JedisCluster JEDIS_CLUSTER = new JedisCluster(
 			new HashSet<HostAndPort>(Arrays.asList(hostAndPorts)));
 
 	public static void main(String[] args) {
@@ -34,12 +34,12 @@ public class JedisClient {
 		System.out.println(jc.get("a") + " " + jc.get("b") + " " + jc.get("c"));
 	}
 
-	private void put(String key, String value) {
-		this.jc.set(key, value);
+	public void put(String key, String value) {
+		JEDIS_CLUSTER.set(key, value);
 	}
 
-	private String get(String key) {
-		return this.jc.get(key);
+	public String get(String key) {
+		return JEDIS_CLUSTER.get(key);
 	}
 
 

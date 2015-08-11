@@ -1,5 +1,6 @@
 package com.turn.splicer;
 
+import com.turn.splicer.cache.JedisClient;
 import com.turn.splicer.hbase.RegionChecker;
 import com.turn.splicer.tsdbutils.JSON;
 import com.turn.splicer.tsdbutils.TsQuery;
@@ -44,6 +45,13 @@ public class HttpWorker implements Callable<String> {
 		LOG.info("Start time={}, End time={}", Const.tsFormat(query.startTime()),
 				Const.tsFormat(query.endTime()));
 
+		JedisClient jc = new JedisClient();
+		String cacheResult = jc.get(this.query.toString());
+		if (cacheResult != null) {
+			return cacheResult;
+		}
+
+
 		String metricName = query.getQueries().get(0).getMetric();
 		String hostname = checker.getBestRegionHost(metricName,
 				query.startTime() / 1000, query.endTime() / 1000);
@@ -81,7 +89,9 @@ public class HttpWorker implements Callable<String> {
 			}
 
 			List<String> dl = IOUtils.readLines(response.getEntity().getContent());
-			return StringUtils.join(dl, "");
+			String result = StringUtils.join(dl, "");
+			jc.put(this.query.toString(), result);
+			return result;
 		} finally {
 			IOUtils.closeQuietly(postman);
 
