@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Maps;
+
 public class TsQuery {
 
 	/**
@@ -315,6 +317,28 @@ public class TsQuery {
 				", end_time=" + end_time +
 				", ms_resolution=" + ms_resolution +
 				'}';
+	}
+
+	/**
+	 * Create a shallow copy of query object. Object returned is validated if the input was valid.
+	 * @param query object to copy
+	 * @return a shallow copy
+	 */
+	public static TsQuery validCopyOf(TsQuery query) {
+		TsQuery tsQuery = new TsQuery();
+		tsQuery.start = query.start;
+		tsQuery.end = query.end;
+		tsQuery.timezone = query.timezone;
+		tsQuery.options = query.options;
+		tsQuery.padding = query.padding;
+		tsQuery.no_annotations = query.no_annotations;
+		tsQuery.with_global_annotations = query.with_global_annotations;
+		tsQuery.show_tsuids = query.show_tsuids;
+		tsQuery.start_time = query.start_time;
+		tsQuery.end_time = query.end_time;
+		tsQuery.ms_resolution = query.ms_resolution;
+		tsQuery.queries = new ArrayList<>();
+		return tsQuery;
 	}
 
 	/**

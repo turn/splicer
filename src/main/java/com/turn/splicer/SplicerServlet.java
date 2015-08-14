@@ -4,6 +4,7 @@ import com.turn.splicer.hbase.RegionChecker;
 import com.turn.splicer.hbase.RegionUtil;
 import com.turn.splicer.merge.ResultsMerger;
 import com.turn.splicer.merge.TsdbResult;
+import com.turn.splicer.tsdbutils.TSSubQuery;
 import com.turn.splicer.tsdbutils.TsQuery;
 import com.turn.splicer.tsdbutils.TsQuerySerializer;
 
@@ -97,27 +98,66 @@ public class SplicerServlet extends HttpServlet {
 				Const.tsFormat(tsQuery.endTime()));
 
 		try (RegionChecker checker = REGION_UTIL.getRegionChecker()) {
-			long duration = tsQuery.endTime() - tsQuery.startTime();
-			if (duration > TimeUnit.MILLISECONDS.convert(2, TimeUnit.HOURS)) {
-				Splicer splicer = new Splicer(tsQuery);
-				List<TsQuery> slices = splicer.sliceQuery();
-				String t = parallelize(slices, checker);
-				response.getWriter().write(t);
+
+			List<TSSubQuery> subQueries = new ArrayList<>(tsQuery.getQueries());
+			if (subQueries.size() == 1) {
+				TsdbResult[] results = parallelizePerSubQuery(tsQuery, checker);
+				response.getWriter().write(TsdbResult.toJson(results));
 				response.getWriter().flush();
 			} else {
-				// only one query. run it in the servlet thread
-				HttpWorker worker = new HttpWorker(tsQuery, checker);
-				try {
-					String res = worker.call();
-					LOG.info("Result for singleton query={}", res);
-				} catch (Exception e) {
-					throw new RuntimeException(e);
+				List<TsdbResult[]> resultsFromAllSubQueries = new ArrayList<>();
+				for (TSSubQuery subQuery: subQueries) {
+					TsQuery tsQueryCopy = TsQuery.validCopyOf(tsQuery);
+					tsQueryCopy.getQueries().add(subQuery);
+					TsdbResult[] results = parallelizePerSubQuery(tsQueryCopy, checker);
+					resultsFromAllSubQueries.add(results);
 				}
+				response.getWriter().write(TsdbResult.toJson(flatten(resultsFromAllSubQueries)));
+				response.getWriter().flush();
 			}
 		}
 	}
 
-	public String parallelize(List<TsQuery> slices, RegionChecker checker)
+	private TsdbResult[] flatten(List<TsdbResult[]> allResults) throws IOException
+	{
+		int size = 0;
+		for (TsdbResult[] r: allResults) {
+			size += r.length;
+		}
+
+		int i=0;
+		TsdbResult[] array = new TsdbResult[size];
+		for (TsdbResult[] r: allResults) {
+			for (TsdbResult s: r) {
+				array[i] = s;
+				i++;
+			}
+		}
+
+		return array;
+	}
+
+	public TsdbResult[] parallelizePerSubQuery(TsQuery tsQuery, RegionChecker checker)
+			throws IOException
+	{
+		long duration = tsQuery.endTime() - tsQuery.startTime();
+		if (duration > TimeUnit.MILLISECONDS.convert(2, TimeUnit.HOURS)) {
+			Splicer splicer = new Splicer(tsQuery);
+			List<TsQuery> slices = splicer.sliceQuery();
+			return parallelize(slices, checker);
+		} else {
+			// only one query. run it in the servlet thread
+			HttpWorker worker = new HttpWorker(tsQuery, checker);
+			try {
+				String json = worker.call();
+				return TsdbResult.fromArray(json);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+	public TsdbResult[] parallelize(List<TsQuery> slices, RegionChecker checker)
 	{
 		String poolName = String.format("splice-pool-%d", POOL_NUMBER.incrementAndGet());
 
@@ -152,9 +192,9 @@ public class SplicerServlet extends HttpServlet {
 			}
 
 			if (result != null) {
-				return TsdbResult.toJson(result);
+				return result;
 			} else {
-				return "[]";
+				return new TsdbResult[]{};
 			}
 
 		} catch (Exception e) {
