@@ -1,7 +1,5 @@
 package com.turn.splicer.merge;
 
-import java.io.IOException;
-
 public class MergeException extends RuntimeException {
 
 	public MergeException(String msg) {

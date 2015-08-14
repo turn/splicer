@@ -45,7 +45,7 @@ public class HttpWorker implements Callable<String> {
 		if (cacheResult != null) {
 			return cacheResult;
 		}
-	
+
 		String metricName = query.getQueries().get(0).getMetric();
 		String hostname = checker.getBestRegionHost(metricName,
 				query.startTime() / 1000, query.endTime() / 1000);

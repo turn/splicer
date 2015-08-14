@@ -3,12 +3,11 @@ package com.turn.splicer.cache;
 import com.turn.splicer.Config;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.HashSet;
 
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
-
-import java.util.Arrays;
-import java.util.HashSet;
 
 /**
  * @author sgangam
