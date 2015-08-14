@@ -17,20 +17,32 @@ public class SplicerMain {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SplicerMain.class);
 
-	private static final int PORT = 9000;
+	// port on which the splicer is listening
+	private static final int PORT = Config.get().getInt("splicer.port");
 
-	private static final int NUM_TSDS = 10;
-	private static final String TSD_HOST = "dwh-data012.atl1.turn.com";
+	// comma separated hosts on which the TSDs are running
+	private static final String TSD_HOSTS = Config.get().getString("tsd.hosts");
+
+	// start and end port for TSDs on data nodes. Start is inclusive, End is exclusive.
+	private static final int TSD_START_PORT = Config.get().getInt("tsd.start.port");
+	private static final int TSD_END_PORT = Config.get().getInt("tsd.end.port");
 
 	public static void main(String[] args) throws InterruptedException {
 
-		for (int i=0; i<NUM_TSDS; i++) {
-			String r = TSD_HOST + ":800" + i;
-			if (HttpWorker.TSDMap.get(TSD_HOST) == null) {
-				HttpWorker.TSDMap.put(TSD_HOST, new LinkedBlockingQueue<String>());
+		String[] TSDs = TSD_HOSTS.split(",");
+		for (int i=0; i<TSDs.length; i++) {
+			TSDs[i] = TSDs[i].trim();
+		}
+
+		for (String TSD: TSDs) {
+			for (int port=TSD_START_PORT; port<TSD_END_PORT; port++) {
+				String r = TSD + ":" + port;
+				if (HttpWorker.TSDMap.get(TSD) == null) {
+					HttpWorker.TSDMap.put(TSD, new LinkedBlockingQueue<String>());
+				}
+				HttpWorker.TSDMap.get(TSD).put(r);
+				LOG.info("Registering {}", r);
 			}
-			HttpWorker.TSDMap.get(TSD_HOST).put(r);
-			LOG.info("Registering {}", r);
 		}
 
 		final Server server = new Server();

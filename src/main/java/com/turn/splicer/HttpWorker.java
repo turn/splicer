@@ -5,11 +5,9 @@ import com.turn.splicer.hbase.RegionChecker;
 import com.turn.splicer.tsdbutils.JSON;
 import com.turn.splicer.tsdbutils.TsQuery;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -28,9 +26,6 @@ public class HttpWorker implements Callable<String> {
 	private static final Logger LOG = LoggerFactory.getLogger(HttpWorker.class);
 
 	public static final Map<String, LinkedBlockingQueue<String>> TSDMap = new HashMap<>();
-	private static final boolean CACHE_ENABLED = false;
-
-	public static Random random = new Random();
 
 	private final TsQuery query;
 	private final RegionChecker checker;
@@ -46,13 +41,11 @@ public class HttpWorker implements Callable<String> {
 		LOG.info("Start time={}, End time={}", Const.tsFormat(query.startTime()),
 				Const.tsFormat(query.endTime()));
 
-		if (CACHE_ENABLED) {
-			String cacheResult = JedisClient.get(this.query.toString());
-			if (cacheResult != null) {
-				return cacheResult;
-			}
+		String cacheResult = JedisClient.get().get(this.query.toString());
+		if (cacheResult != null) {
+			return cacheResult;
 		}
-
+	
 		String metricName = query.getQueries().get(0).getMetric();
 		String hostname = checker.getBestRegionHost(metricName,
 				query.startTime() / 1000, query.endTime() / 1000);
@@ -91,9 +84,7 @@ public class HttpWorker implements Callable<String> {
 
 			List<String> dl = IOUtils.readLines(response.getEntity().getContent());
 			String result = StringUtils.join(dl, "");
-			if (CACHE_ENABLED) {
-				JedisClient.put(this.query.toString(), result);
-			}
+			JedisClient.get().put(this.query.toString(), result);
 			return result;
 		} finally {
 			IOUtils.closeQuietly(postman);

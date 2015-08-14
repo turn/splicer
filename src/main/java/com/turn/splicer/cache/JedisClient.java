@@ -1,5 +1,9 @@
 package com.turn.splicer.cache;
 
+import com.turn.splicer.Config;
+
+import javax.annotation.Nullable;
+
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 
@@ -11,6 +15,7 @@ import java.util.HashSet;
  */
 public class JedisClient {
 
+	private static final boolean CACHE_ENABLED = Config.get().getBoolean("caching.enabled");
 
 	//The JedisCluster is threadsafe
 	private static final HostAndPort[] hostAndPorts = {
@@ -21,8 +26,37 @@ public class JedisClient {
 			new HostAndPort("127.0.0.1", 30005),
 			new HostAndPort("127.0.0.1", 30006)
 	};
-	private static final JedisCluster JEDIS_CLUSTER = new JedisCluster(
-			new HashSet<HostAndPort>(Arrays.asList(hostAndPorts)));
+
+	private static final JedisClient CLIENT = new JedisClient();
+
+	private final JedisCluster jedisCluster;
+
+	private JedisClient() {
+		if (CACHE_ENABLED) {
+			jedisCluster = new JedisCluster(new HashSet<>(Arrays.asList(hostAndPorts)));
+		} else {
+			jedisCluster = null;
+		}
+	}
+
+	public static JedisClient get() {
+		return CLIENT;
+	}
+
+	public void put(String key, String value) {
+		if (CACHE_ENABLED && jedisCluster != null) {
+			jedisCluster.set(key, value);
+		}
+	}
+
+	@Nullable
+	public String get(String key) {
+		if (CACHE_ENABLED && jedisCluster != null) {
+			return jedisCluster.get(key);
+		} else {
+			return null;
+		}
+	}
 
 	public static void main(String[] args) {
 		JedisClient jc = new JedisClient();
@@ -33,14 +67,5 @@ public class JedisClient {
 
 		System.out.println(jc.get("a") + " " + jc.get("b") + " " + jc.get("c"));
 	}
-
-	public static void put(String key, String value) {
-		JEDIS_CLUSTER.set(key, value);
-	}
-
-	public static String get(String key) {
-		return JEDIS_CLUSTER.get(key);
-	}
-
 
 }
