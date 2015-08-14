@@ -48,6 +48,10 @@ public class Config {
 		return Integer.parseInt(properties.getProperty(field));
 	}
 
+	public boolean getBoolean(String field) {
+		return Boolean.parseBoolean(properties.getProperty(field));
+	}
+
 	/**
 	 * Read a string from the config file
 	 * @param field property name
