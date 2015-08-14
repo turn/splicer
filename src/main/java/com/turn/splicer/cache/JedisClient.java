@@ -34,11 +34,11 @@ public class JedisClient {
 		System.out.println(jc.get("a") + " " + jc.get("b") + " " + jc.get("c"));
 	}
 
-	public void put(String key, String value) {
+	public static void put(String key, String value) {
 		JEDIS_CLUSTER.set(key, value);
 	}
 
-	public String get(String key) {
+	public static String get(String key) {
 		return JEDIS_CLUSTER.get(key);
 	}
 

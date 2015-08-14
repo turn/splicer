@@ -28,6 +28,7 @@ public class HttpWorker implements Callable<String> {
 	private static final Logger LOG = LoggerFactory.getLogger(HttpWorker.class);
 
 	public static final Map<String, LinkedBlockingQueue<String>> TSDMap = new HashMap<>();
+	private static final boolean CACHE_ENABLED = false;
 
 	public static Random random = new Random();
 
@@ -45,12 +46,12 @@ public class HttpWorker implements Callable<String> {
 		LOG.info("Start time={}, End time={}", Const.tsFormat(query.startTime()),
 				Const.tsFormat(query.endTime()));
 
-		JedisClient jc = new JedisClient();
-		String cacheResult = jc.get(this.query.toString());
-		if (cacheResult != null) {
-			return cacheResult;
+		if (CACHE_ENABLED) {
+			String cacheResult = JedisClient.get(this.query.toString());
+			if (cacheResult != null) {
+				return cacheResult;
+			}
 		}
-
 
 		String metricName = query.getQueries().get(0).getMetric();
 		String hostname = checker.getBestRegionHost(metricName,
@@ -90,7 +91,9 @@ public class HttpWorker implements Callable<String> {
 
 			List<String> dl = IOUtils.readLines(response.getEntity().getContent());
 			String result = StringUtils.join(dl, "");
-			jc.put(this.query.toString(), result);
+			if (CACHE_ENABLED) {
+				JedisClient.put(this.query.toString(), result);
+			}
 			return result;
 		} finally {
 			IOUtils.closeQuietly(postman);
