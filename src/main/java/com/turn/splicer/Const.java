@@ -11,4 +11,9 @@ public class Const {
 		return SDF.format(new Date(val));
 	}
 
+	/**
+	 * Mask to verify a timestamp on 6 bytes in milliseconds
+	 */
+	public static final long MILLISECOND_MASK = 0xFFFFF00000000000L;
+
 }
