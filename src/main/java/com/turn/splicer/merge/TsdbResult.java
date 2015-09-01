@@ -1,5 +1,8 @@
 package com.turn.splicer.merge;
 
+import com.turn.splicer.tsdbutils.DataPoint;
+import com.turn.splicer.tsdbutils.MutableDataPoint;
+
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,12 +30,16 @@ import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.NumericNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.base.Preconditions;
+import com.google.common.math.DoubleMath;
+
 
 public class TsdbResult {
 
 	protected static final ObjectMapper JSON_MAPPER = (new ObjectMapperFactory()).get();
 
 	private String metric;
+
+	private String alias = null;
 
 	private Tags tags;
 
@@ -48,6 +55,18 @@ public class TsdbResult {
 		} catch (IOException e) {
 			throw new MergeException("Could not deserialize jsonString", e);
 		}
+	}
+
+	public static TsdbResult copyMeta(TsdbResult source) {
+		TsdbResult copy = new TsdbResult();
+		copy.metric = source.getMetric();
+		copy.alias = source.getAlias();
+		copy.tags = new Tags(new HashMap<String, String>(source.getTags().getTags()));
+		copy.aggregateTags = source.getAggregateTags() != null ?
+				new ArrayList<String>(source.getAggregateTags()) : null;
+		copy.tsuids = source.getTsuids() != null ? new ArrayList<String>(source.getTsuids()) : null;
+		copy.dps = new Points(new HashMap<String, Object>());
+		return copy;
 	}
 
 	@Nonnull
@@ -68,6 +87,9 @@ public class TsdbResult {
 	}
 
 	public String getMetric() {
+		if(alias != null) {
+			return alias;
+		}
 		return metric;
 	}
 
@@ -118,12 +140,99 @@ public class TsdbResult {
 			return map;
 		}
 
+		public void addPoint(DataPoint dp) {
+			String timestamp = String.valueOf(dp.timestamp());
+			if(dp.isInteger()) {
+				map.put(timestamp, dp.longValue());
+			} else {
+				map.put(timestamp, dp.doubleValue());
+			}
+		}
+
+		/**
+		 * Returns a DataPoint[] sorted by timestamp with no scaling of the values
+		 * @return
+		 * @throws Exception
+		 */
+		public DataPoint[] getDataPointsFromTreeMap() throws Exception {
+			return getDataPointsFromTreeMap(1);
+		}
+
+		/**
+		 * Returns a DataPoint[] - sorted by timestamp - of the Points in the
+		 * map, will multiply the value of each point by the scaleFactor param
+		 *
+		 * uses a Treemap to get the sorting by timestamp
+		 * @param scaleFactor
+		 * @return
+		 * @throws Exception
+		 */
+		public DataPoint[] getDataPointsFromTreeMap(int scaleFactor) throws Exception {
+			TreeMap<String, Object> treeMap = new TreeMap(map);
+			DataPoint[] dps = new DataPoint[treeMap.size()];
+			int index = 0;
+			for(Map.Entry<String, Object> entry: treeMap.entrySet()) {
+				MutableDataPoint dp = new MutableDataPoint();
+				Object val = entry.getValue();
+				long timestamp = Long.valueOf(entry.getKey());
+				if(val instanceof Double) {
+					dp.reset(timestamp, ((Double) val).doubleValue() * scaleFactor);
+				} else if(val instanceof Long) {
+					dp.reset(timestamp, ((Long) val).longValue() * scaleFactor);
+				} else {
+					throw new Exception("Unexpected type in map: " + val.getClass());
+				}
+				dps[index] = dp;
+				index++;
+			}
+
+			return dps;
+		}
+
+		/**
+		 * Returns a DataPoint[] -sorted by timestamp - of the reciprocal of points
+		 * in the Points map eg 1 / value (needed for division)
+		 * @return
+		 * @throws Exception
+		 */
+		public DataPoint[] getDataPointsFromTreeMapReciprocal() throws Exception {
+			TreeMap<String, Object> treeMap = new TreeMap(map);
+			DataPoint[] dps = new DataPoint[treeMap.size()];
+			int index = 0;
+			for(Map.Entry<String, Object> entry: treeMap.entrySet()) {
+				MutableDataPoint dp = new MutableDataPoint();
+				Object val = entry.getValue();
+				long timestamp = Long.valueOf(entry.getKey());
+				if(val instanceof Double) {
+					double doubleVal = ((Double) val).doubleValue();
+					if (DoubleMath.fuzzyCompare(doubleVal, 0, 1E-7) != 0) {
+						dp.reset(timestamp, 1 / doubleVal);
+					}
+				} else if(val instanceof Long) {
+					long longVal = ((Long) val).longValue();
+					if(longVal != 0) {
+						dp.reset(timestamp, 1 / longVal);
+					}
+				} else {
+					throw new Exception("Unexpected type in map: " + val.getClass());
+				}
+				dps[index] = dp;
+				index++;
+			}
+
+			return dps;
+		}
+
+
+
 		@Override
 		public String toString() {
 			return "Points{" +
 					"map=" + map +
 					'}';
 		}
+
+
 	}
 
 	public static class Tags {
@@ -238,6 +347,10 @@ public class TsdbResult {
 			return new Points(points);
 		}
 	}
+
+	public String getAlias() { return alias;}
+
+	public void setAlias(String alias) {this.alias = alias;}
 
 	@Override
 	public String toString() {

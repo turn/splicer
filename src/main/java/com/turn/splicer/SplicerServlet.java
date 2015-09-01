@@ -1,12 +1,16 @@
 package com.turn.splicer;
 
+import com.google.common.collect.Lists;
 import com.turn.splicer.hbase.RegionChecker;
 import com.turn.splicer.hbase.RegionUtil;
 import com.turn.splicer.merge.ResultsMerger;
 import com.turn.splicer.merge.TsdbResult;
+import com.turn.splicer.tsdbutils.BadRequestException;
+import com.turn.splicer.tsdbutils.SplicerUtils;
 import com.turn.splicer.tsdbutils.TSSubQuery;
 import com.turn.splicer.tsdbutils.TsQuery;
 import com.turn.splicer.tsdbutils.TsQuerySerializer;
+import com.turn.splicer.tsdbutils.expression.ExpressionTree;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,11 +74,103 @@ public class SplicerServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * Parses a TsQuery out of request, divides into subqueries, and writes result
+	 * from openTsdb
+	 *
+	 * Format for GET request:
+	 * start - required start time of query
+	 * end - optional end time of query, if not provided will use current time as end
+	 * x - expression (functions + metrics)
+	 * m - metrics only - no functions, [aggregator]:[optional_downsampling]:metric{optional tags}
+	 * either x or m must be provided, otherwise nothing to query!
+	 * ms - optional for millisecond resolution
+	 * padding - optional pad front of value's with 0's
+	 *
+	 *example:
+	 * /api/query?start=1436910725795&x=abs(sum:1m-avg:tcollector.collector.lines_received)"
+	 * @param request
+	 * @param response
+	 * @throws IOException
+	 */
 	private void doGetWork(HttpServletRequest request, HttpServletResponse response)
 			throws IOException
 	{
-		LOG.info("GET (from remoteIp=" + request.getRemoteAddr() + ") is not yet supported");
-		response.getWriter().write("GET (from " + request.getRemoteAddr() + ") is not yet supported\n");
+		LOG.info(request.getQueryString());
+
+		final TsQuery dataQuery = new TsQuery();
+
+		dataQuery.setStart(request.getParameter("start"));
+		dataQuery.setEnd(request.getParameter("end"));
+
+		dataQuery.setPadding(Boolean.valueOf(request.getParameter("padding")));
+
+		if(request.getParameter("ms") != null) {
+			dataQuery.setMsResolution(true);
+		}
+
+		List<ExpressionTree> expressionTrees = null;
+
+		final String[] expressions = request.getParameterValues("x");
+		if(expressions != null) {
+			expressionTrees = new ArrayList<ExpressionTree>();
+			List<String> metricQueries = new ArrayList<String>();
+			SplicerUtils.syntaxCheck(expressions, dataQuery, metricQueries, expressionTrees);
+
+			for(String mq: metricQueries) {
+					SplicerUtils.parseMTypeSubQuery(mq, dataQuery);
+			}
+		}
+
+		if(request.getParameter("m") != null) {
+			final List<String> legacy_queries = Arrays.asList(request.getParameterValues("m"));
+			for(String q: legacy_queries) {
+				SplicerUtils.parseMTypeSubQuery(q, dataQuery);
+			}
+		}
+
+		dataQuery.validateAndSetQuery();
+
+		LOG.info("Serving query={}", dataQuery);
+
+		LOG.info("Original TsQuery Start time={}, End time={}",
+				Const.tsFormat(dataQuery.startTime()),
+				Const.tsFormat(dataQuery.endTime()));
+
+		try (RegionChecker checker = REGION_UTIL.getRegionChecker()) {
+
+			List<TSSubQuery> subQueries = new ArrayList<>(dataQuery.getQueries());
+			List<TsdbResult[]> resultsFromAllSubQueries = new ArrayList<>();
+
+			if(subQueries.size() == 0) {
+				throw new BadRequestException("No subqueries");
+			}
+			else if (subQueries.size() == 1) {
+				TsdbResult[] results = parallelizePerSubQuery(dataQuery, checker);
+				resultsFromAllSubQueries.add(results);
+			} else {
+				for (TSSubQuery subQuery: subQueries) {
+					TsQuery tsQueryCopy = TsQuery.validCopyOf(dataQuery);
+					tsQueryCopy.getQueries().add(subQuery);
+					TsdbResult[] results = parallelizePerSubQuery(tsQueryCopy, checker);
+					resultsFromAllSubQueries.add(results);
+				}
+			}
+
+			List<TsdbResult[]> exprResults = Lists.newArrayList();
+
+			if(expressionTrees != null && expressionTrees.size() > 0) {
+				for(ExpressionTree tree : expressionTrees) {
+					exprResults.add(tree.evaluate(resultsFromAllSubQueries));
+				}
+				response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
+						exprResults)));
+			} else {
+				response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
+						resultsFromAllSubQueries)));
+			}
+			response.getWriter().flush();
+		}
 	}
 
 	private void doPostWork(HttpServletRequest request, HttpServletResponse response)
@@ -112,29 +210,11 @@ public class SplicerServlet extends HttpServlet {
 					TsdbResult[] results = parallelizePerSubQuery(tsQueryCopy, checker);
 					resultsFromAllSubQueries.add(results);
 				}
-				response.getWriter().write(TsdbResult.toJson(flatten(resultsFromAllSubQueries)));
+				response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
+						resultsFromAllSubQueries)));
 				response.getWriter().flush();
 			}
 		}
-	}
-
-	private TsdbResult[] flatten(List<TsdbResult[]> allResults) throws IOException
-	{
-		int size = 0;
-		for (TsdbResult[] r: allResults) {
-			size += r.length;
-		}
-
-		int i=0;
-		TsdbResult[] array = new TsdbResult[size];
-		for (TsdbResult[] r: allResults) {
-			for (TsdbResult s: r) {
-				array[i] = s;
-				i++;
-			}
-		}
-
-		return array;
 	}
 
 	public TsdbResult[] parallelizePerSubQuery(TsQuery tsQuery, RegionChecker checker)
