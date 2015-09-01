@@ -11,11 +11,11 @@ import com.google.common.collect.Lists;
 
 public class SyntaxChecker implements SyntaxCheckerConstants {
 
-	private TsQuery data_query;
+	private TsQuery dataQuery;
 	private List<String> metricQueries;
 
-	public void setTsQuery(TsQuery data_query) {
-		this.data_query = data_query;
+	public void setTsQuery(TsQuery dataQuery) {
+		this.dataQuery = dataQuery;
 	}
 
 	public void setMetricQueries(List<String> metricQueries) {
@@ -36,7 +36,7 @@ public class SyntaxChecker implements SyntaxCheckerConstants {
 		Token name;
 		int paramIndex = 0;
 		name = jj_consume_token(NAME);
-		ExpressionTree tree = new ExpressionTree(name.image, data_query);
+		ExpressionTree tree = new ExpressionTree(name.image, dataQuery);
 		jj_consume_token(7);
 		PARAMETER(tree, paramIndex++);
 		label_1:

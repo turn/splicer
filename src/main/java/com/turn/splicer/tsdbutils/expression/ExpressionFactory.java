@@ -44,7 +44,7 @@ public class ExpressionFactory {
 
 	static class IdentityExpression implements Expression {
 		@Override
-		public TsdbResult[] evaluate(TsQuery data_query,
+		public TsdbResult[] evaluate(TsQuery dataQuery,
 		                             List<TsdbResult[]> queryResults, List<String> queryParams) {
 			return queryResults.get(0);
 		}
@@ -65,7 +65,7 @@ public class ExpressionFactory {
 		static Joiner COMMA_JOINER = Joiner.on(',').skipNulls();
 
 		@Override
-		public TsdbResult[] evaluate(TsQuery data_query, List<TsdbResult[]> queryResults,
+		public TsdbResult[] evaluate(TsQuery dataQuery, List<TsdbResult[]> queryResults,
 		                             List<String> queryParams) {
 			if (queryResults == null || queryResults.size() == 0) {
 				throw new NullPointerException("No query results");

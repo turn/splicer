@@ -17,7 +17,11 @@ import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile.EstimationType;
 import org.apache.commons.math3.util.ResizableDoubleArray;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * Utility class that provides common, generally useful aggregators.

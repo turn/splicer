@@ -10,7 +10,7 @@ public class Expressions {
 
 	public static ExpressionTree parse(String expr,
 	                                   List<String> metricQueries,
-	                                   TsQuery data_query) {
+	                                   TsQuery dataQuery) {
 		Preconditions.checkNotNull(expr);
 		if (expr.indexOf('(') == -1 || expr.indexOf(')') == -1) {
 			throw new RuntimeException("Invalid Expression: " + expr);
@@ -26,25 +26,25 @@ public class Expressions {
 					"for function '" + funcName + "'");
 		}
 
-		ExpressionTree root = new ExpressionTree(rootExpr, data_query);
+		ExpressionTree root = new ExpressionTree(rootExpr, dataQuery);
 
 		reader.skipWhitespaces();
 		if (reader.peek() == '(') {
 			reader.next();
-			parse(reader, metricQueries, root, data_query);
+			parse(reader, metricQueries, root, dataQuery);
 		}
 
 		return root;
 	}
 
 	private static void parse(ExprReader reader, List<String> metricQueries,
-	                          ExpressionTree root, TsQuery data_query) {
+	                          ExpressionTree root, TsQuery dataQuery) {
 
 		int parameterIndex = 0;
 		reader.skipWhitespaces();
 		if (reader.peek() != ')') {
 			String param = reader.readNextParameter();
-			parseParam(param, metricQueries, root, data_query, parameterIndex++);
+			parseParam(param, metricQueries, root, dataQuery, parameterIndex++);
 		}
 
 		while (true) {
@@ -55,7 +55,7 @@ public class Expressions {
 				reader.skip(2); //swallow the ",," delimiter
 				reader.skipWhitespaces();
 				String param = reader.readNextParameter();
-				parseParam(param, metricQueries, root, data_query, parameterIndex++);
+				parseParam(param, metricQueries, root, dataQuery, parameterIndex++);
 			} else {
 				throw new RuntimeException("Invalid delimiter in parameter " +
 						"list at pos=" + reader.getMark() + ", expr="
@@ -65,7 +65,7 @@ public class Expressions {
 	}
 
 	private static void parseParam(String param, List<String> metricQueries,
-	                               ExpressionTree root, TsQuery data_query, int index) {
+	                               ExpressionTree root, TsQuery dataQuery, int index) {
 		if (param == null || param.length() == 0) {
 			throw new RuntimeException("Invalid Parameter in " +
 					"Expression");
@@ -73,7 +73,7 @@ public class Expressions {
 
 		if (param.indexOf('(') > 0 && param.indexOf(')') > 0) {
 			// sub expression
-			ExpressionTree subTree = parse(param, metricQueries, data_query);
+			ExpressionTree subTree = parse(param, metricQueries, dataQuery);
 			root.addSubExpression(subTree, index);
 		} else if (param.indexOf(':') >= 0) {
 			// metric query

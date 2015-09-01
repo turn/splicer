@@ -15,7 +15,7 @@ import com.google.common.collect.Maps;
 public class ExpressionTree {
 
 	private final Expression expr;
-	private final TsQuery data_query;
+	private final TsQuery dataQuery;
 
 	private List<ExpressionTree> subExpressions;
 	private List<String> funcParams;
@@ -29,13 +29,13 @@ public class ExpressionTree {
 		METRIC_QUERY
 	}
 
-	public ExpressionTree(String exprName, TsQuery data_query) {
-		this(ExpressionFactory.getByName(exprName), data_query);
+	public ExpressionTree(String exprName, TsQuery dataQuery) {
+		this(ExpressionFactory.getByName(exprName), dataQuery);
 	}
 
-	public ExpressionTree(Expression expr, TsQuery data_query) {
+	public ExpressionTree(Expression expr, TsQuery dataQuery) {
 		this.expr = expr;
-		this.data_query = data_query;
+		this.dataQuery = dataQuery;
 	}
 
 	public void addSubExpression(ExpressionTree child, int paramIndex) {
@@ -91,7 +91,7 @@ public class ExpressionTree {
 			}
 		}
 
-		return expr.evaluate(data_query, materialized, funcParams);
+		return expr.evaluate(dataQuery, materialized, funcParams);
 	}
 
 	public String toString() {

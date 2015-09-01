@@ -10,11 +10,11 @@ import com.google.common.collect.Lists;
 
 public class SyntaxChecker {
 
-  private TSQuery data_query;
+  private TSQuery dataQuery;
   private List<String> metricQueries;
 
-  public void setTSQuery(TSQuery data_query) {
-    this.data_query = data_query;
+  public void setTSQuery(TSQuery dataQuery) {
+    this.dataQuery = dataQuery;
   }
 
   public void setMetricQueries(List<String> metricQueries) {
@@ -39,7 +39,7 @@ TOKEN: { <NAME: ("*" | (["a" - "z"] | ["A" - "Z"]| ["0"-"9"] | "-" | "_" | "#" |
 TOKEN: { <PARAM: ("&&")> }
 
 ExpressionTree EXPRESSION():  {Token name; int paramIndex=0;}  {
-        name=<NAME> { ExpressionTree tree=new ExpressionTree(name.image,data_query); }
+        name=<NAME> { ExpressionTree tree=new ExpressionTree(name.image,dataQuery); }
         "(" PARAMETER(tree, paramIndex++) ("," PARAMETER(tree, paramIndex++))* ")"
         {return tree;}
 }

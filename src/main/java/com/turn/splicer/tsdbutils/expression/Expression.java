@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface Expression {
 
-	TsdbResult[] evaluate(TsQuery data_query, List<TsdbResult[]> queryResults, List<String> queryParams);
+	TsdbResult[] evaluate(TsQuery dataQuery, List<TsdbResult[]> queryResults, List<String> queryParams);
 
 	String writeStringField(List<String> queryParams, String innerExpression);
 

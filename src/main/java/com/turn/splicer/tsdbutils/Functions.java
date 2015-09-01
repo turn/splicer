@@ -11,7 +11,10 @@ import com.turn.splicer.tsdbutils.expression.Expression;
 import com.turn.splicer.tsdbutils.expression.SeekableViewDataPointImpl;
 import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Functions {
@@ -25,7 +28,7 @@ public class Functions {
 	public static class MovingAverageFunction implements Expression {
 
 		@Override
-		public TsdbResult[] evaluate(TsQuery data_query, List<TsdbResult[]> queryResults, List<String> params) {
+		public TsdbResult[] evaluate(TsQuery dataQuery, List<TsdbResult[]> queryResults, List<String> params) {
 
 			//TODO: Why can MovingAverageFunction return an empty set
 
@@ -77,7 +80,7 @@ public class Functions {
 			}
 
 			SeekableView view = new AggregationIterator(views,
-					data_query.startTime() / 1000, data_query.endTime() / 1000,
+					dataQuery.startTime() / 1000, dataQuery.endTime() / 1000,
 					new Aggregators.MovingAverage(Aggregators.Interpolation.LERP, "movingAverage", numPoints, isTimeUnit),
 					Aggregators.Interpolation.LERP, false);
 
@@ -292,8 +295,6 @@ public class Functions {
 			return results;
 		}
 
-
-
 	public static class HighestCurrent implements Expression {
 		@Override
 		public TsdbResult[] evaluate(TsQuery query, List<TsdbResult[]> queryResults,
@@ -310,7 +311,7 @@ public class Functions {
 	public static class DivideSeriesFunction implements Expression {
 
 		@Override
-		public TsdbResult[] evaluate(TsQuery data_query, List<TsdbResult[]> queryResults, List<String> params) {
+		public TsdbResult[] evaluate(TsQuery dataQuery, List<TsdbResult[]> queryResults, List<String> params) {
 			if (queryResults == null || queryResults.isEmpty()) {
 				throw new NullPointerException("Query results cannot be empty");
 			}
@@ -341,7 +342,7 @@ public class Functions {
 			}
 
 			SeekableView view = (new AggregationIterator(views,
-					data_query.startTime() / 1000, data_query.endTime() / 1000,
+					dataQuery.startTime() / 1000, dataQuery.endTime() / 1000,
 					Aggregators.MULTIPLY, Aggregators.Interpolation.LERP, false));
 
 			List<DataPoint> points = Lists.newArrayList();
@@ -374,7 +375,7 @@ public class Functions {
 	public static class MultiplySeriesFunction implements Expression {
 
 		@Override
-		public TsdbResult[] evaluate(TsQuery data_query, List<TsdbResult[]> queryResults, List<String> queryParams) {
+		public TsdbResult[] evaluate(TsQuery dataQuery, List<TsdbResult[]> queryResults, List<String> queryParams) {
 			if (queryResults == null || queryResults.isEmpty()) {
 				throw new NullPointerException("Query results cannot be empty");
 			}
@@ -398,7 +399,7 @@ public class Functions {
 			}
 
 			SeekableView view = (new AggregationIterator(views,
-					data_query.startTime() / 1000, data_query.endTime() / 1000,
+					dataQuery.startTime() / 1000, dataQuery.endTime() / 1000,
 					Aggregators.MULTIPLY, Aggregators.Interpolation.LERP, false));
 
 			List<DataPoint> points = Lists.newArrayList();
@@ -430,7 +431,7 @@ public class Functions {
 	public static class DifferenceSeriesFunction implements Expression {
 
 		@Override
-		public TsdbResult[] evaluate(TsQuery data_query, List<TsdbResult[]> queryResults, List<String> params) {
+		public TsdbResult[] evaluate(TsQuery dataQuery, List<TsdbResult[]> queryResults, List<String> params) {
 			if (queryResults == null || queryResults.isEmpty()) {
 				throw new NullPointerException("Query results cannot be empty");
 			}
@@ -461,7 +462,7 @@ public class Functions {
 			}
 
 			SeekableView view = (new AggregationIterator(views,
-					data_query.startTime() / 1000, data_query.endTime() / 1000,
+					dataQuery.startTime() / 1000, dataQuery.endTime() / 1000,
 					Aggregators.SUM, Aggregators.Interpolation.LERP, false));
 
 			List<DataPoint> points = Lists.newArrayList();
@@ -493,7 +494,7 @@ public class Functions {
 	public static class SumSeriesFunction implements Expression {
 
 		@Override
-		public TsdbResult[] evaluate(TsQuery data_query, List<TsdbResult[]> queryResults, List<String> params) {
+		public TsdbResult[] evaluate(TsQuery dataQuery, List<TsdbResult[]> queryResults, List<String> params) {
 			if (queryResults == null || queryResults.isEmpty()) {
 				throw new NullPointerException("Query results cannot be empty");
 			}
@@ -517,7 +518,7 @@ public class Functions {
 			}
 
 			SeekableView view = (new AggregationIterator(views,
-					data_query.startTime() / 1000, data_query.endTime() / 1000,
+					dataQuery.startTime() / 1000, dataQuery.endTime() / 1000,
 					Aggregators.SUM, Aggregators.Interpolation.LERP, false));
 
 			//Ok now I just need to make the AggregationIterator spit out
@@ -550,7 +551,7 @@ public class Functions {
 	public static class AbsoluteValueFunction implements Expression {
 
 		@Override
-		public TsdbResult[] evaluate(TsQuery data_query, List<TsdbResult[]> queryResults, List<String> params) {
+		public TsdbResult[] evaluate(TsQuery dataQuery, List<TsdbResult[]> queryResults, List<String> params) {
 			if (queryResults == null || queryResults.isEmpty()) {
 				throw new NullPointerException("Query results cannot be empty");
 			}
@@ -593,7 +594,7 @@ public class Functions {
 	public static class ScaleFunction implements Expression {
 
 		@Override
-		public TsdbResult[] evaluate(TsQuery data_query, List<TsdbResult[]> queryResults, List<String> params) {
+		public TsdbResult[] evaluate(TsQuery dataQuery, List<TsdbResult[]> queryResults, List<String> params) {
 			if (queryResults == null || queryResults.isEmpty()) {
 				throw new NullPointerException("Query results cannot be empty");
 			}
