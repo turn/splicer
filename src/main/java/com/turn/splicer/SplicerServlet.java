@@ -77,6 +77,18 @@ public class SplicerServlet extends HttpServlet {
 	/**
 	 * Parses a TsQuery out of request, divides into subqueries, and writes result
 	 * from openTsdb
+	 *
+	 * Format for GET request:
+	 * start - required start time of query
+	 * end - optional end time of query, if not provided will use current time as end
+	 * x - expression (functions + metrics)
+	 * m - metrics only - no functions, [aggregator]:[optional_downsampling]:metric{optional tags}
+	 * either x or m must be provided, otherwise nothing to query!
+	 * ms - optional for millisecond resolution
+	 * padding - optional pad front of value's with 0's
+	 *
+	 *example:
+	 * /api/query?start=1436910725795&x=abs(sum:1m-avg:tcollector.collector.lines_received)"
 	 * @param request
 	 * @param response
 	 * @throws IOException

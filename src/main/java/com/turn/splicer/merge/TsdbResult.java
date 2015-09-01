@@ -149,10 +149,24 @@ public class TsdbResult {
 			}
 		}
 
+		/**
+		 * Returns a DataPoint[] sorted by timestamp with no scaling of the values
+		 * @return
+		 * @throws Exception
+		 */
 		public DataPoint[] getDataPointsFromTreeMap() throws Exception {
 			return getDataPointsFromTreeMap(1);
 		}
 
+		/**
+		 * Returns a DataPoint[] - sorted by timestamp - of the Points in the
+		 * map, will multiply the value of each point by the scaleFactor param
+		 *
+		 * uses a Treemap to get the sorting by timestamp
+		 * @param scaleFactor
+		 * @return
+		 * @throws Exception
+		 */
 		public DataPoint[] getDataPointsFromTreeMap(int scaleFactor) throws Exception {
 			TreeMap<String, Object> treeMap = new TreeMap(map);
 			DataPoint[] dps = new DataPoint[treeMap.size()];
@@ -175,6 +189,12 @@ public class TsdbResult {
 			return dps;
 		}
 
+		/**
+		 * Returns a DataPoint[] -sorted by timestamp - of the reciprocal of points
+		 * in the Points map eg 1 / value (needed for division)
+		 * @return
+		 * @throws Exception
+		 */
 		public DataPoint[] getDataPointsFromTreeMapReciprocal() throws Exception {
 			TreeMap<String, Object> treeMap = new TreeMap(map);
 			DataPoint[] dps = new DataPoint[treeMap.size()];
