@@ -22,3 +22,7 @@
 *.swp
 *~
 .DS_Store
+
+## Gradle directories
+.gradle/
+build/
