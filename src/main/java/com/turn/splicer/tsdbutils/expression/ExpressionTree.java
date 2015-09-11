@@ -1,8 +1,10 @@
 package com.turn.splicer.tsdbutils.expression;
 
-import com.turn.splicer.tsdbutils.TsQuery;
+import com.turn.splicer.SplicerServlet;
+import com.turn.splicer.hbase.RegionChecker;
 import com.turn.splicer.merge.TsdbResult;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -11,6 +13,10 @@ import java.util.Map;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.turn.splicer.tsdbutils.Functions;
+import com.turn.splicer.tsdbutils.SplicerQueryRunner;
+import com.turn.splicer.tsdbutils.SplicerUtils;
+import com.turn.splicer.tsdbutils.TsQuery;
 
 public class ExpressionTree {
 
@@ -24,6 +30,8 @@ public class ExpressionTree {
 
 	private static final Joiner DOUBLE_COMMA_JOINER = Joiner.on(",").skipNulls();
 
+	private SplicerQueryRunner queryRunner;
+
 	enum Parameter {
 		SUB_EXPRESSION,
 		METRIC_QUERY
@@ -36,6 +44,7 @@ public class ExpressionTree {
 	public ExpressionTree(Expression expr, TsQuery dataQuery) {
 		this.expr = expr;
 		this.dataQuery = dataQuery;
+		this.queryRunner = new SplicerQueryRunner();
 	}
 
 	public void addSubExpression(ExpressionTree child, int paramIndex) {
@@ -62,9 +71,10 @@ public class ExpressionTree {
 		funcParams.add(param);
 	}
 
-	public TsdbResult[] evaluate(List<TsdbResult[]> queryResults) {
-		List<TsdbResult[]> materialized = Lists.newArrayList();
+	public TsdbResult[] evaluateAll() {
+		List<TsdbResult[]> orderedSubResults = Lists.newArrayList();
 		List<Integer> metricQueryKeys = null;
+
 		if (subMetricQueries != null && subMetricQueries.size() > 0) {
 			metricQueryKeys = Lists.newArrayList(subMetricQueries.keySet());
 			Collections.sort(metricQueryKeys);
@@ -72,26 +82,66 @@ public class ExpressionTree {
 
 		int metricPointer = 0;
 		int subExprPointer = 0;
+
+		if(expr instanceof Functions.TimeShiftFunction) {
+			String param = funcParams.get(0);
+			if (param == null || param.length() == 0) {
+				throw new NullPointerException("Invalid timeshift='" + param + "'");
+			}
+
+			param = param.trim();
+
+			long timeshift = -1;
+			if (param.startsWith("'") && param.endsWith("'")) {
+				timeshift = Functions.parseParam(param) / 1000;
+			} else {
+				throw new RuntimeException("Invalid timeshift parameter: eg '10min'");
+			}
+
+			dataQuery.validateTimes();
+			long newStart = dataQuery.startTime() - timeshift;
+			dataQuery.setStart(Long.toString(newStart));
+			long newEnd = dataQuery.endTime() - timeshift;
+			dataQuery.setEnd(Long.toString(newEnd));
+			dataQuery.validateTimes();
+		}
+
 		for (int i = 0; i < parameterSourceIndex.size(); i++) {
 			Parameter p = parameterSourceIndex.get(i);
 
 			if (p == Parameter.METRIC_QUERY) {
 				if (metricQueryKeys == null) {
 					throw new RuntimeException("Attempt to read metric " +
-							"results when none exist");
+							"results when none exists");
 				}
 
 				int ix = metricQueryKeys.get(metricPointer++);
-				materialized.add(queryResults.get(ix));
+				String query = subMetricQueries.get(ix);
+
+				TsQuery realQuery = TsQuery.validCopyOf(dataQuery);
+
+
+				SplicerUtils.parseMTypeSubQuery(query, realQuery);
+
+				realQuery.validateAndSetQuery();
+				RegionChecker checker = SplicerServlet.REGION_UTIL.getRegionChecker();
+
+				//run the query
+				try {
+					orderedSubResults.add(queryRunner.sliceAndRunQuery(realQuery, checker));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
 			} else if (p == Parameter.SUB_EXPRESSION) {
-				ExpressionTree st = subExpressions.get(subExprPointer++);
-				materialized.add(st.evaluate(queryResults));
+				ExpressionTree nextExpression = subExpressions.get(subExprPointer++);
+				orderedSubResults.add(nextExpression.evaluateAll());
 			} else {
 				throw new RuntimeException("Unknown value: " + p);
 			}
 		}
 
-		return expr.evaluate(dataQuery, materialized, funcParams);
+		return expr.evaluate(dataQuery, orderedSubResults, funcParams);
 	}
 
 	public String toString() {
@@ -135,5 +185,4 @@ public class ExpressionTree {
 
 		return DOUBLE_COMMA_JOINER.join(strs);
 	}
-
 }

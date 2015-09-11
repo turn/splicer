@@ -215,7 +215,7 @@ public final class SplicerUtils {
             final ArrayList<TSSubQuery> subs = new ArrayList<TSSubQuery>(1);
             dataQuery.setQueries(subs);
         }
-        dataQuery.getQueries().add(sub_query);
+        dataQuery.addSubQuery(sub_query);
     }
 
     public static TsdbResult[] flatten(List<TsdbResult[]> allResults) throws IOException

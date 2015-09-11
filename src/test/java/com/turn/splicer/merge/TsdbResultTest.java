@@ -2,6 +2,7 @@ package com.turn.splicer.merge;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -98,6 +99,77 @@ public class TsdbResultTest {
 		Assert.assertEquals(r.getDps().getMap().get("1438383960"), 2259482.384829848);
 		Assert.assertEquals(r.getDps().getMap().get("1438384020"), 2259648.478802788);
 
+	}
+
+	@Test
+	public void testEquals() {
+		TsdbResult result1 = new TsdbResult();
+		TsdbResult result2 = null;
+
+		Assert.assertFalse(result1.equals(result2));
+
+		result2 = new TsdbResult();
+		Assert.assertTrue(result1.equals(result2));
+
+		result1.setMetric("dummy");
+		Assert.assertFalse(result1.equals(result2));
+		Assert.assertFalse(result2.equals(result1));
+
+		result2.setMetric("not_dummy");
+		Assert.assertFalse(result1.equals(result2));
+		Assert.assertFalse(result2.equals(result1));
+
+		result2.setMetric("dummy");
+		Assert.assertTrue(result1.equals(result2));
+		Assert.assertTrue(result2.equals(result1));
+
+		result1.setAlias("alias_dummy");
+		Assert.assertFalse(result1.equals(result2));
+		Assert.assertFalse(result2.equals(result1));
+
+		result2.setAlias("not_alias_dummy");
+		Assert.assertFalse(result1.equals(result2));
+		Assert.assertFalse(result2.equals(result1));
+
+		result2.setAlias("alias_dummy");
+		Assert.assertTrue(result1.equals(result2));
+		Assert.assertTrue(result2.equals(result1));
+
+		Map<String, String> result1tags = new HashMap<String, String>();
+		result1.setTags(new TsdbResult.Tags(result1tags));
+		Assert.assertFalse(result1.equals(result2));
+		Assert.assertFalse(result2.equals(result1));
+
+		result1tags.put("key1", "value1");
+		Assert.assertFalse(result1.equals(result2));
+		Assert.assertFalse(result2.equals(result1));
+
+		Map<String, String> result2tags = new HashMap<String, String>();
+		result2.setTags(new TsdbResult.Tags(result2tags));
+		Assert.assertFalse(result1.equals(result2));
+		Assert.assertFalse(result2.equals(result1));
+
+		result2tags.put("key1", "value1");
+		Assert.assertTrue(result1.equals(result2));
+		Assert.assertTrue(result2.equals(result1));
+
+		Map<String, Object> result1map = new HashMap<String, Object>();
+		result1.setDps(new TsdbResult.Points(result1map));
+		Assert.assertFalse(result1.equals(result2));
+		Assert.assertFalse(result2.equals(result1));
+
+		Map<String, Object> result2map = new HashMap<String, Object>();
+		result2.setDps(new TsdbResult.Points(result2map));
+		Assert.assertTrue(result1.equals(result2));
+		Assert.assertTrue(result2.equals(result1));
+
+		result1map.put("point1", "point1val");
+		Assert.assertFalse(result1.equals(result2));
+		Assert.assertFalse(result2.equals(result1));
+
+		result2map.put("point1", "point1val");
+		Assert.assertTrue(result1.equals(result2));
+		Assert.assertTrue(result2.equals(result1));
 	}
 
 }

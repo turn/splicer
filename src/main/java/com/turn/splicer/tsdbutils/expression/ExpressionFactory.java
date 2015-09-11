@@ -31,6 +31,7 @@ public class ExpressionFactory {
 		availableFunctions.put("highestCurrent", new Functions.HighestCurrent());
 		availableFunctions.put("highestMax", new Functions.HighestMax());
 		availableFunctions.put("abs", new Functions.AbsoluteValueFunction());
+		availableFunctions.put("timeShift", new Functions.TimeShiftFunction());
 	}
 
 	@VisibleForTesting

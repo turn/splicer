@@ -79,6 +79,19 @@ public class TsQuery {
 
 	}
 
+//	public TsQuery(TsQuery tsq) {
+//		this.start = tsq.getStart();
+//		this.end = tsq.getEnd();
+//		this.timezone = tsq.getTimezone();
+//		this.options = new HashMap(tsq.getOptions());
+//		this.padding = tsq.getPadding();
+//		this.no_annotations = tsq.getNoAnnotations();
+//		this.with_global_annotations = tsq.getGlobalAnnotations();
+//		this.show_tsuids = tsq.getShowTSUIDs();
+//		//not sure if I need subqueries yet or not
+//		this.
+//	}
+
 	/**
 	 * Runs through query parameters to make sure it's a valid request.
 	 * This includes parsing relative timestamps, verifying that the end time is
@@ -92,21 +105,7 @@ public class TsQuery {
 	 * @throws IllegalArgumentException if something is wrong with the query
 	 */
 	public void validateAndSetQuery() {
-		if (start == null || start.isEmpty()) {
-			throw new IllegalArgumentException("Missing start time");
-		}
-		start_time = DateTime.parseDateTimeString(start, timezone);
-
-		if (end != null && !end.isEmpty()) {
-			end_time = DateTime.parseDateTimeString(end, timezone);
-		} else {
-			end_time = System.currentTimeMillis();
-		}
-		if (end_time <= start_time) {
-			throw new IllegalArgumentException(
-					"End time [" + end_time + "] must be greater than the start time ["
-							+ start_time + "]");
-		}
+		validateTimes();
 
 		if (queries == null || queries.isEmpty()) {
 			throw new IllegalArgumentException("Missing queries");
@@ -117,6 +116,7 @@ public class TsQuery {
 			sub.validateAndSetQuery();
 		}
 	}
+
 
 	/**
 	 * More duplicated code. This is copied from the above functions.
@@ -291,6 +291,10 @@ public class TsQuery {
 	 */
 	public List<TSSubQuery> getQueries() {
 		return queries;
+	}
+
+	public void addSubQuery(TSSubQuery subQuery) {
+		queries.add(subQuery);
 	}
 
 	/**

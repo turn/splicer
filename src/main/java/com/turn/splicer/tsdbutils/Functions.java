@@ -4,6 +4,7 @@
  */
 package com.turn.splicer.tsdbutils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.turn.splicer.merge.TsdbResult;
 import com.turn.splicer.tsdbutils.expression.AggregationIterator;
@@ -11,10 +12,7 @@ import com.turn.splicer.tsdbutils.expression.Expression;
 import com.turn.splicer.tsdbutils.expression.SeekableViewDataPointImpl;
 import org.apache.log4j.Logger;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class Functions {
@@ -23,6 +21,68 @@ public class Functions {
 
 	private static enum MaxExpressionType {
 		CURRENT, MAX
+	}
+
+	public static class TimeShiftFunction implements Expression {
+
+
+		/**
+		 * in place modify of TsdbResult array to increase timestamps by timeshift
+		 * @param dataQuery
+		 * @param queryResults
+		 * @param queryParams
+		 * @return
+		 */
+		@Override
+		public TsdbResult[] evaluate(TsQuery dataQuery, List<TsdbResult[]> queryResults, List<String> queryParams) {
+			//not 100% sure what to do here -> do I need to think of the case where I have no data points
+			if(queryResults == null || queryResults.isEmpty()) {
+				return new TsdbResult[]{};
+			}
+
+			if(queryParams == null || queryResults.isEmpty()) {
+				throw new NullPointerException("Need amount of timeshift to perform timeshift");
+			}
+
+			String param = queryParams.get(0);
+			if (param == null || param.length() == 0) {
+				throw new NullPointerException("Invalid timeshift='" + param + "'");
+			}
+
+			param = param.trim();
+
+			long timeshift = -1;
+			if (param.startsWith("'") && param.endsWith("'")) {
+				timeshift = parseParam(param) / 1000;
+			} else {
+				throw new RuntimeException("Invalid timeshift parameter: eg '10min'");
+			}
+
+			if (timeshift <= 0) {
+				throw new RuntimeException("timeshift <= 0");
+			}
+
+			TsdbResult[] inputPoints = queryResults.get(0);
+
+			for(TsdbResult input: inputPoints) {
+				Map<String, Object> inputMap = input.getDps().getMap();
+				Map<String, Object> outputMap = new HashMap<String, Object>();
+				for (String oldKey : inputMap.keySet()) {
+					Long newtime = Long.parseLong(oldKey) + (Long) timeshift;
+					String newKey = Long.toString(newtime);
+					Object val = inputMap.get(oldKey);
+					outputMap.put(newKey, val);
+				}
+				input.setDps(new TsdbResult.Points(outputMap));
+			}
+
+			return inputPoints;
+		}
+
+		@Override
+		public String writeStringField(List<String> queryParams, String innerExpression) {
+			return null;
+		}
 	}
 
 	public static class MovingAverageFunction implements Expression {
@@ -104,35 +164,6 @@ public class Functions {
 
 		}
 
-		public long parseParam(String param) {
-			char[] chars = param.toCharArray();
-			int tuIndex = 0;
-			for (int c = 1; c < chars.length; c++) {
-				if (Character.isDigit(chars[c])) {
-					tuIndex++;
-				} else {
-					break;
-				}
-			}
-
-			if (tuIndex == 0) {
-				throw new RuntimeException("Invalid Parameter: " + param);
-			}
-
-			int time = Integer.parseInt(param.substring(1, tuIndex + 1));
-			String unit = param.substring(tuIndex + 1, param.length() - 1);
-
-			if ("min".equals(unit)) {
-				return TimeUnit.MILLISECONDS.convert(time, TimeUnit.MINUTES);
-			} else if ("hr".equals(unit)) {
-				return TimeUnit.MILLISECONDS.convert(time, TimeUnit.HOURS);
-			} else if ("sec".equals(unit)) {
-				return TimeUnit.MILLISECONDS.convert(time, TimeUnit.SECONDS);
-			} else {
-				throw new RuntimeException("unknown time unit=" + unit);
-			}
-
-		}
 
 		@Override
 		public String writeStringField(List<String> queryParams, String innerExpression) {
@@ -640,6 +671,36 @@ public class Functions {
 		public String writeStringField(List<String> queryParams, String innerExpression) {
 			return "scale(" + innerExpression + ")";
 		}
+	}
+
+	public static long parseParam(String param) {
+		char[] chars = param.toCharArray();
+		int tuIndex = 0;
+		for (int c = 1; c < chars.length; c++) {
+			if (Character.isDigit(chars[c])) {
+				tuIndex++;
+			} else {
+				break;
+			}
+		}
+
+		if (tuIndex == 0) {
+			throw new RuntimeException("Invalid Parameter: " + param);
+		}
+
+		int time = Integer.parseInt(param.substring(1, tuIndex + 1));
+		String unit = param.substring(tuIndex + 1, param.length() - 1);
+
+		if ("min".equals(unit)) {
+			return TimeUnit.MILLISECONDS.convert(time, TimeUnit.MINUTES);
+		} else if ("hr".equals(unit)) {
+			return TimeUnit.MILLISECONDS.convert(time, TimeUnit.HOURS);
+		} else if ("sec".equals(unit)) {
+			return TimeUnit.MILLISECONDS.convert(time, TimeUnit.SECONDS);
+		} else {
+			throw new RuntimeException("unknown time unit=" + unit);
+		}
+
 	}
 
 }
