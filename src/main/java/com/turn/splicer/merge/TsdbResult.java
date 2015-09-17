@@ -223,7 +223,24 @@ public class TsdbResult {
 			return dps;
 		}
 
-
+		@Override
+		public boolean equals(Object obj) {
+			if(this == obj) {
+				return true;
+			}
+			if(obj == null) {
+				return false;
+			}
+			if(!(obj instanceof Points)) {
+				return false;
+			}
+			Points toCompare = (Points) obj;
+			if(this.map != null) {
+				return this.map.equals(toCompare.map);
+			} else {
+				return toCompare.map == null;
+			}
+		}
 
 		@Override
 		public String toString() {
@@ -244,6 +261,26 @@ public class TsdbResult {
 
 		public Map<String, String> getTags() {
 			return tags;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(this == obj) {
+				return true;
+			}
+			if(obj == null) {
+				return false;
+			}
+			if(!(obj instanceof Tags)) {
+				return false;
+			}
+
+			Tags toCompare = (Tags) obj;
+			if(this.tags != null) {
+				return this.tags.equals(toCompare.tags);
+			} else {
+				return toCompare.tags == null;
+			}
 		}
 
 		@Override
@@ -361,6 +398,47 @@ public class TsdbResult {
 				", tsuids=" + tsuids +
 				", dps=" + dps +
 				'}';
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(this == obj) {
+			return true;
+		}
+		if(obj == null) {
+			return false;
+		}
+		if(!(obj instanceof TsdbResult)) {
+			return false;
+		}
+
+		TsdbResult toCompare = (TsdbResult) obj;
+
+		boolean result = true;
+		if(this.metric != null) {
+			result = result && this.metric.equals(toCompare.metric);
+		} else {
+			result = result && toCompare.metric == null;
+		}
+
+		if(this.alias != null) {
+			result = result && this.alias.equals(toCompare.alias);
+		} else {
+			result = result && toCompare.alias == null;
+		}
+
+		if(this.tags != null) {
+			result = result && this.tags.equals(toCompare.tags);
+		} else {
+			result = result && toCompare.tags == null;
+		}
+
+		if(this.dps != null) {
+			result = result && this.dps.equals(toCompare.dps);
+		} else {
+			result = result && toCompare.dps == null;
+		}
+		return result;
 	}
 
 	static class ObjectMapperFactory {

@@ -16,27 +16,27 @@ public class MovingAverageTest {
   public void testParseParam() {
     Functions.MovingAverageFunction func = new Functions.MovingAverageFunction();
     long x;
-    x = func.parseParam("'2min'");
+    x = Functions.parseParam("'2min'");
     Assert.assertEquals(TimeUnit.MILLISECONDS.convert(2, TimeUnit.MINUTES), x);
 
-    x= func.parseParam("'1hr'");
+    x= Functions.parseParam("'1hr'");
     Assert.assertEquals(TimeUnit.MILLISECONDS.convert(1, TimeUnit.HOURS), x);
 
-    x=func.parseParam("'1000hr'");
+    x= Functions.parseParam("'1000hr'");
     Assert.assertEquals(TimeUnit.MILLISECONDS.convert(1000,TimeUnit.HOURS), x);
 
-    x=func.parseParam("'1sec'");
+    x= Functions.parseParam("'1sec'");
     Assert.assertEquals(TimeUnit.MILLISECONDS.convert(1,TimeUnit.SECONDS), x);
 
     try {
-      func.parseParam("'1sechr'");
+      Functions.parseParam("'1sechr'");
       Assert.assertTrue(false);
     } catch (RuntimeException e) {
       Assert.assertTrue(true);
     }
 
     try {
-      func.parseParam("'1 sec'");
+      Functions.parseParam("'1 sec'");
       Assert.assertTrue(false);
     } catch (RuntimeException e) {
       Assert.assertTrue(true);

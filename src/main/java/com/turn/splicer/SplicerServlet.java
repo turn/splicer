@@ -5,11 +5,8 @@ import com.turn.splicer.hbase.RegionChecker;
 import com.turn.splicer.hbase.RegionUtil;
 import com.turn.splicer.merge.ResultsMerger;
 import com.turn.splicer.merge.TsdbResult;
-import com.turn.splicer.tsdbutils.BadRequestException;
-import com.turn.splicer.tsdbutils.SplicerUtils;
-import com.turn.splicer.tsdbutils.TSSubQuery;
-import com.turn.splicer.tsdbutils.TsQuery;
-import com.turn.splicer.tsdbutils.TsQuerySerializer;
+import com.turn.splicer.tsdbutils.*;
+import com.turn.splicer.tsdbutils.expression.Expression;
 import com.turn.splicer.tsdbutils.expression.ExpressionTree;
 
 import javax.servlet.http.HttpServlet;
@@ -36,15 +33,7 @@ public class SplicerServlet extends HttpServlet {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SplicerServlet.class);
 
-	private static final int NUM_THREADS_PER_POOL = 10;
-
-	private static AtomicInteger POOL_NUMBER = new AtomicInteger(0);
-
-	private static RegionUtil REGION_UTIL = new RegionUtil();
-
-	private static ThreadFactoryBuilder THREAD_FACTORY_BUILDER = new ThreadFactoryBuilder()
-			.setDaemon(false)
-			.setPriority(Thread.NORM_PRIORITY);
+	public static RegionUtil REGION_UTIL = new RegionUtil();
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -115,9 +104,11 @@ public class SplicerServlet extends HttpServlet {
 		if(expressions != null) {
 			expressionTrees = new ArrayList<ExpressionTree>();
 			List<String> metricQueries = new ArrayList<String>();
+
 			SplicerUtils.syntaxCheck(expressions, dataQuery, metricQueries, expressionTrees);
 
 			for(String mq: metricQueries) {
+				LOG.info("metric query: " + mq);
 					SplicerUtils.parseMTypeSubQuery(mq, dataQuery);
 			}
 		}
@@ -138,37 +129,22 @@ public class SplicerServlet extends HttpServlet {
 				Const.tsFormat(dataQuery.endTime()));
 
 		try (RegionChecker checker = REGION_UTIL.getRegionChecker()) {
-
-			List<TSSubQuery> subQueries = new ArrayList<>(dataQuery.getQueries());
-			List<TsdbResult[]> resultsFromAllSubQueries = new ArrayList<>();
-
-			if(subQueries.size() == 0) {
-				throw new BadRequestException("No subqueries");
-			}
-			else if (subQueries.size() == 1) {
-				TsdbResult[] results = parallelizePerSubQuery(dataQuery, checker);
-				resultsFromAllSubQueries.add(results);
-			} else {
-				for (TSSubQuery subQuery: subQueries) {
-					TsQuery tsQueryCopy = TsQuery.validCopyOf(dataQuery);
-					tsQueryCopy.getQueries().add(subQuery);
-					TsdbResult[] results = parallelizePerSubQuery(tsQueryCopy, checker);
-					resultsFromAllSubQueries.add(results);
-				}
-			}
-
 			List<TsdbResult[]> exprResults = Lists.newArrayList();
 
-			if(expressionTrees != null && expressionTrees.size() > 0) {
-				for(ExpressionTree tree : expressionTrees) {
-					exprResults.add(tree.evaluate(resultsFromAllSubQueries));
+			if(expressionTrees != null && expressionTrees.size() == 1) {
+				TsdbResult[] results = expressionTrees.get(0).evaluateAll();
+				int i = 0;
+				for(TsdbResult result: results) {
+					System.out.println("Result" + result + "Index" + i);
+					i++;
 				}
+				exprResults.add(results);
 				response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
-						exprResults)));
+					exprResults)));
 			} else {
-				response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
-						resultsFromAllSubQueries)));
+				System.out.println("this is broken right now");
 			}
+
 			response.getWriter().flush();
 		}
 	}
@@ -198,91 +174,24 @@ public class SplicerServlet extends HttpServlet {
 		try (RegionChecker checker = REGION_UTIL.getRegionChecker()) {
 
 			List<TSSubQuery> subQueries = new ArrayList<>(tsQuery.getQueries());
+			SplicerQueryRunner queryRunner = new SplicerQueryRunner();
+
 			if (subQueries.size() == 1) {
-				TsdbResult[] results = parallelizePerSubQuery(tsQuery, checker);
+				TsdbResult[] results = queryRunner.sliceAndRunQuery(tsQuery, checker);
 				response.getWriter().write(TsdbResult.toJson(results));
 				response.getWriter().flush();
 			} else {
 				List<TsdbResult[]> resultsFromAllSubQueries = new ArrayList<>();
 				for (TSSubQuery subQuery: subQueries) {
 					TsQuery tsQueryCopy = TsQuery.validCopyOf(tsQuery);
-					tsQueryCopy.getQueries().add(subQuery);
-					TsdbResult[] results = parallelizePerSubQuery(tsQueryCopy, checker);
+					tsQueryCopy.addSubQuery(subQuery);
+					TsdbResult[] results = queryRunner.sliceAndRunQuery(tsQueryCopy, checker);
 					resultsFromAllSubQueries.add(results);
 				}
 				response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
 						resultsFromAllSubQueries)));
 				response.getWriter().flush();
 			}
-		}
-	}
-
-	public TsdbResult[] parallelizePerSubQuery(TsQuery tsQuery, RegionChecker checker)
-			throws IOException
-	{
-		long duration = tsQuery.endTime() - tsQuery.startTime();
-		if (duration > TimeUnit.MILLISECONDS.convert(2, TimeUnit.HOURS)) {
-			Splicer splicer = new Splicer(tsQuery);
-			List<TsQuery> slices = splicer.sliceQuery();
-			return parallelize(slices, checker);
-		} else {
-			// only one query. run it in the servlet thread
-			HttpWorker worker = new HttpWorker(tsQuery, checker);
-			try {
-				String json = worker.call();
-				return TsdbResult.fromArray(json);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		}
-	}
-
-	public TsdbResult[] parallelize(List<TsQuery> slices, RegionChecker checker)
-	{
-		String poolName = String.format("splice-pool-%d", POOL_NUMBER.incrementAndGet());
-
-		ThreadFactory factory = THREAD_FACTORY_BUILDER
-				.setNameFormat(poolName + "-thread-%d")
-				.build();
-
-		ExecutorService svc = Executors.newFixedThreadPool(NUM_THREADS_PER_POOL, factory);
-		ResultsMerger merger = new ResultsMerger();
-		try {
-			List<Future<String>> results = new ArrayList<>();
-			for (TsQuery q : slices) {
-				results.add(svc.submit(new HttpWorker(q, checker)));
-			}
-
-			TsdbResult[] result = null;
-			for (Future<String> s: results) {
-				String json = s.get();
-				LOG.info("Got result={}", json);
-
-				if (result == null) {
-					TsdbResult[] tmp = TsdbResult.fromArray(json);
-					// set result to tmp iff there are some values
-					result = (tmp.length > 0 ? tmp : null);
-				} else {
-					// we might receive no results for a particular time slot
-					TsdbResult[] tmp = TsdbResult.fromArray(json);
-					if (tmp.length > 0) {
-						result = merger.merge(result, tmp);
-					}
-				}
-			}
-
-			if (result != null) {
-				return result;
-			} else {
-				return new TsdbResult[]{};
-			}
-
-		} catch (Exception e) {
-			LOG.error("Could not execute HTTP Queries", e);
-			throw new RuntimeException(e);
-		} finally {
-			svc.shutdown();
-			LOG.info("Shutdown thread pool");
 		}
 	}
 }
