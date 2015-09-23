@@ -4,23 +4,23 @@ import com.turn.splicer.hbase.RegionChecker;
 import com.turn.splicer.merge.TsdbResult;
 import com.turn.splicer.tsdbutils.SplicerQueryRunner;
 import com.turn.splicer.tsdbutils.SplicerUtils;
-import com.turn.splicer.tsdbutils.TSSubQuery;
 import com.turn.splicer.tsdbutils.TsQuery;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.testng.annotations.Test;
 
-import java.io.IOException;
-import java.util.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertEquals;
 
 /**
  * Created by bpeltz on 9/15/15.

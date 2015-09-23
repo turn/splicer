@@ -29,19 +29,21 @@ public class SplicerMain {
 
 	public static void main(String[] args) throws InterruptedException {
 
-		String[] TSDs = TSD_HOSTS.split(",");
-		for (int i=0; i<TSDs.length; i++) {
-			TSDs[i] = TSDs[i].trim();
-		}
+		if (Config.get().getBoolean("tsd.connect.enable")) {
+			String[] TSDs = TSD_HOSTS.split(",");
+			for (int i = 0; i < TSDs.length; i++) {
+				TSDs[i] = TSDs[i].trim();
+			}
 
-		for (String TSD: TSDs) {
-			for (int port=TSD_START_PORT; port<TSD_END_PORT; port++) {
-				String r = TSD + ":" + port;
-				if (HttpWorker.TSDMap.get(TSD) == null) {
-					HttpWorker.TSDMap.put(TSD, new LinkedBlockingQueue<String>());
+			for (String TSD : TSDs) {
+				for (int port = TSD_START_PORT; port < TSD_END_PORT; port++) {
+					String r = TSD + ":" + port;
+					if (HttpWorker.TSDMap.get(TSD) == null) {
+						HttpWorker.TSDMap.put(TSD, new LinkedBlockingQueue<String>());
+					}
+					HttpWorker.TSDMap.get(TSD).put(r);
+					LOG.info("Registering {}", r);
 				}
-				HttpWorker.TSDMap.get(TSD).put(r);
-				LOG.info("Registering {}", r);
 			}
 		}
 
