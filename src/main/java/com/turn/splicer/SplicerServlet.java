@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,12 +55,18 @@ public class SplicerServlet extends HttpServlet {
 	{
 		try {
 			doPostWork(request, response);
-		} catch (IOException e) {
-			LOG.error("IOException which processing POST request", e);
-			e.printStackTrace(response.getWriter());
 		} catch (Exception e) {
 			LOG.error("Exception which processing POST request", e);
-			e.printStackTrace(response.getWriter());
+
+			String stackTrace = "";
+			if (e.getStackTrace() != null && e.getStackTrace().length > 2) {
+				stackTrace += e.getStackTrace()[0] + ", " + e.getStackTrace()[1];
+			} else {
+				stackTrace = "<empty>";
+			}
+
+			response.getWriter().write("{\"error\": \""
+					+ e.getMessage() + ", stacktrace=" + stackTrace + "\"}\n");
 		}
 	}
 
@@ -178,7 +185,11 @@ public class SplicerServlet extends HttpServlet {
 
 			if (subQueries.size() == 1) {
 				TsdbResult[] results = queryRunner.sliceAndRunQuery(tsQuery, checker);
-				response.getWriter().write(TsdbResult.toJson(results));
+				if (results == null || results.length == 0) {
+					response.getWriter().write("[]");
+				} else {
+					response.getWriter().write(TsdbResult.toJson(results));
+				}
 				response.getWriter().flush();
 			} else {
 				List<TsdbResult[]> resultsFromAllSubQueries = new ArrayList<>();

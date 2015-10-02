@@ -13,8 +13,12 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ResultsMerger {
+
+	private static final Logger LOG = LoggerFactory.getLogger(ResultsMerger.class);
 
 	/**
 	 * Merge two chunks of results into one piece
@@ -59,7 +63,8 @@ public class ResultsMerger {
 			long signature = signatureOf(s);
 			List<TsdbResult> fromFirst = fTable.get(signature);
 			if (fromFirst == null || fromFirst.isEmpty()) {
-				throw new MergeException("Could not find counterpart for " + s);
+				LOG.error("Could not find counterpart for " + s);
+				continue;
 			}
 
 			boolean foundMatch = false;

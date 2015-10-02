@@ -39,25 +39,35 @@ public class Splicer {
 	public List<TsQuery> sliceQuery()
 	{
 		final long bucket_size = SLICE_SIZE * 1000;
+
+		final long overflow_in_millis;
+		if (Config.get().getBoolean("slice.overflow.enable")) {
+			overflow_in_millis = OVERFLOW * 1000;
+		} else {
+			overflow_in_millis = 0;
+		}
+
 		long startTime = tsQuery.startTime();
 		long endTime = tsQuery.endTime();
 
 		List<TsQuery> slices = new ArrayList<>();
+
 		long end = startTime - (startTime % bucket_size) + bucket_size;
-		slices.add(TsQuery.sliceOf(tsQuery, startTime - (startTime % bucket_size), end + OVERFLOW));
-		LOG.info("First interval is {} to {}", startTime, end);
+		TsQuery first = TsQuery.sliceOf(tsQuery, startTime - (startTime % bucket_size), end + overflow_in_millis);
+		slices.add(first);
+		LOG.info("First interval is {} to {}", Const.tsFormat(first.startTime()), Const.tsFormat(first.endTime()));
 
 		while (end + bucket_size < endTime) {
-			TsQuery slice = TsQuery.sliceOf(tsQuery, end, end + bucket_size + OVERFLOW);
+			TsQuery slice = TsQuery.sliceOf(tsQuery, end, end + bucket_size + overflow_in_millis);
 			slices.add(slice);
 			end = end + bucket_size;
 			LOG.info("Add interval# {} from {} to {}", slices.size(),
-					slice.startTime(),
-					slice.endTime());
+					Const.tsFormat(slice.startTime()),
+					Const.tsFormat(slice.endTime()));
 		}
 
 		slices.add(TsQuery.sliceOf(tsQuery, end, endTime));
-		LOG.info("Last interval is {} to {}", end, endTime);
+		LOG.info("Last interval is {} to {}", Const.tsFormat(end), Const.tsFormat(endTime));
 
 		return slices;
 	}
