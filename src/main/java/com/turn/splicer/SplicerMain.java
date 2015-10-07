@@ -59,6 +59,7 @@ public class SplicerMain {
 
 		ServletHandler servletHandler = new ServletHandler();
 		servletHandler.addServletWithMapping(SplicerServlet.class.getName(), "/api/query");
+		servletHandler.addServletWithMapping(ConfigServlet.class.getName(), "/api/config");
 
 		HandlerList handlers = new HandlerList();
 		handlers.setHandlers(new Handler[]{

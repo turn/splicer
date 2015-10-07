@@ -2,8 +2,13 @@ package com.turn.splicer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.base.Splitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +18,8 @@ public class Config {
 	private static final Logger LOG = LoggerFactory.getLogger(Config.class);
 
 	private static final String CONFIG_FILE = "splicer.conf";
+
+	private static final String VERSION_FILE = "VERSION";
 
 	private static Splitter COMMA_SPLITTER = Splitter.on(',').omitEmptyStrings().trimResults();
 
@@ -72,6 +79,48 @@ public class Config {
 	public Iterable<String> getStrings(String field) {
 		String all = getString(field);
 		return COMMA_SPLITTER.split(all);
+	}
+
+	public void writeAsJson(JsonGenerator jgen) throws IOException
+	{
+		if (properties == null) {
+			jgen.writeStartObject();
+			jgen.writeEndObject();
+			return;
+		}
+
+		TreeMap<String, String> map = new TreeMap<>();
+		for (Map.Entry<Object, Object> e: properties.entrySet()) {
+			map.put(String.valueOf(e.getKey()), String.valueOf(e.getValue()));
+		}
+
+		InputStream is = getClass().getClassLoader().getResourceAsStream(VERSION_FILE);
+		if (is != null) {
+			LOG.info("Loaded {} bytes of version file configuration", is.available());
+			Properties versionProps = new Properties();
+			versionProps.load(is);
+			for (Map.Entry<Object, Object> e: versionProps.entrySet()) {
+				map.put(String.valueOf(e.getKey()), String.valueOf(e.getValue()));
+			}
+		}
+
+		jgen.writeStartObject();
+		for (Map.Entry<String, String> e: map.entrySet()) {
+			if (e.getValue().indexOf(',') > 0) {
+				splitList(e.getKey(), e.getValue(), jgen);
+			} else {
+				jgen.writeStringField(e.getKey(), e.getValue());
+			}
+		}
+		jgen.writeEndObject();
+	}
+
+	private void splitList(String key, String value, JsonGenerator jgen) throws IOException {
+		jgen.writeArrayFieldStart(key);
+		for (String o: value.split(",")) {
+			jgen.writeString(o);
+		}
+		jgen.writeEndArray();
 	}
 
 }
