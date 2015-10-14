@@ -40,7 +40,7 @@ public class QueryAwareResultsMerger {
 
 	public TsdbResult[] merge(List<TsdbResult[]> slices)
 	{
-		if (slices == null) {
+		if (slices == null || slices.size() == 0) {
 			return new TsdbResult[]{};
 		}
 
@@ -79,9 +79,18 @@ public class QueryAwareResultsMerger {
 
 		for (TsdbResult leftItem: right) {
 			String ts = createTagString(leftItem);
-			TsdbResult rightItem = leftIndex.get(ts);
+			TsdbResult rightItem = leftIndex.remove(ts);
+			if (rightItem == null) {
+				LOG.info("Did not find counterpart for ts={}", ts);
+				continue;
+			}
 			TsdbResult merge = merge(leftItem, rightItem);
 			mergeResults.add(merge);
+		}
+
+		// add any left over tags
+		if (leftIndex.size() > 0) {
+			mergeResults.addAll(leftIndex.values());
 		}
 
 		TsdbResult[] r = new TsdbResult[mergeResults.size()];

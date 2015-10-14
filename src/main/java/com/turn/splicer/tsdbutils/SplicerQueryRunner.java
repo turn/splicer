@@ -87,31 +87,6 @@ public class SplicerQueryRunner {
 				return new TsdbResult[]{};
 			}
 
-
-//			TsdbResult[] result = null;
-//			for (Future<String> s: results) {
-//				String json = s.get();
-//
-//
-//				if (result == null) {
-//					TsdbResult[] tmp = TsdbResult.fromArray(json);
-//					// set result to tmp iff there are some values
-//					result = (tmp.length > 0 ? tmp : null);
-//				} else {
-//					// we might receive no results for a particular time slot
-//					TsdbResult[] tmp = TsdbResult.fromArray(json);
-//					if (tmp.length > 0) {
-//						result = merger.merge(result, tmp);
-//					}
-//				}
-//			}
-//
-//			if (result != null) {
-//				return result;
-//			} else {
-//				return new TsdbResult[]{};
-//			}
-
 		} catch (Exception e) {
 			LOG.error("Could not execute HTTP Queries", e);
 			throw new RuntimeException(e);
