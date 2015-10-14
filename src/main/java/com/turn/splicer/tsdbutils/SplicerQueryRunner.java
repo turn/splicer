@@ -2,7 +2,9 @@ package com.turn.splicer.tsdbutils;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.turn.splicer.HttpWorker;
+import com.turn.splicer.Splicer;
 import com.turn.splicer.hbase.RegionChecker;
+import com.turn.splicer.merge.QueryAwareResultsMerger;
 import com.turn.splicer.merge.ResultsMerger;
 import com.turn.splicer.merge.TsdbResult;
 import org.slf4j.Logger;
@@ -36,9 +38,9 @@ public class SplicerQueryRunner {
 	{
 		long duration = tsQuery.endTime() - tsQuery.startTime();
 		if (duration > TimeUnit.MILLISECONDS.convert(2, TimeUnit.HOURS)) {
-			com.turn.splicer.Splicer splicer = new com.turn.splicer.Splicer(tsQuery);
+			Splicer splicer = new Splicer(tsQuery);
 			List<TsQuery> slices = splicer.sliceQuery();
-			return runQuerySlices(slices, checker);
+			return runQuerySlices(tsQuery, slices, checker);
 		} else {
 			// only one query. run it in the servlet thread
 			HttpWorker worker = new HttpWorker(tsQuery, checker);
@@ -51,7 +53,7 @@ public class SplicerQueryRunner {
 		}
 	}
 
-	private TsdbResult[] runQuerySlices(List<TsQuery> slices, RegionChecker checker)
+	private TsdbResult[] runQuerySlices(TsQuery query, List<TsQuery> slices, RegionChecker checker)
 	{
 		String poolName = String.format("splice-pool-%d", POOL_NUMBER.incrementAndGet());
 
@@ -61,32 +63,26 @@ public class SplicerQueryRunner {
 
 		ExecutorService svc = Executors.newFixedThreadPool(NUM_THREADS_PER_POOL, factory);
 		ResultsMerger merger = new ResultsMerger();
+		QueryAwareResultsMerger qamerger = new QueryAwareResultsMerger(query);
 		try {
 			List<Future<String>> results = new ArrayList<>();
 			for (TsQuery q : slices) {
 				results.add(svc.submit(new HttpWorker(q, checker)));
 			}
 
-			TsdbResult[] result = null;
+			List<TsdbResult[]> tmpResults = new ArrayList<>();
 			for (Future<String> s: results) {
 				String json = s.get();
 				LOG.debug("Got result={}", json);
 
-				if (result == null) {
-					TsdbResult[] tmp = TsdbResult.fromArray(json);
-					// set result to tmp iff there are some values
-					result = (tmp.length > 0 ? tmp : null);
-				} else {
-					// we might receive no results for a particular time slot
-					TsdbResult[] tmp = TsdbResult.fromArray(json);
-					if (tmp.length > 0) {
-						result = merger.merge(result, tmp);
-					}
-				}
+				TsdbResult[] r = TsdbResult.fromArray(json);
+				tmpResults.add(r);
 			}
 
-			if (result != null) {
-				return result;
+			TsdbResult[] qaResult = qamerger.merge(tmpResults);
+			// respond with qaResult
+			if (qaResult != null) {
+				return qaResult;
 			} else {
 				return new TsdbResult[]{};
 			}

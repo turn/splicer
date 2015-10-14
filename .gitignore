@@ -4,6 +4,9 @@
 # Temporary dependency on turn codebase
 /lib/turn.jar
 
+# No need to check in VERSION parameters to git
+docker/VERSION
+
 # Eclipse files we don't want to track
 /.metadata
 /.pydevproject*

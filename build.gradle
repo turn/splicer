@@ -60,6 +60,13 @@ task fatJar(type: Jar, dependsOn: build) {
     with jar
 }
 
+task generateVersion(type: Exec) {
+    workingDir 'docker'
+    commandLine './version.sh'
+    commandLine 'mkdir', '-p', 'resources'
+    commandLine 'mv', 'VERSION', 'resources/'
+}
+
 task copyJar(type: Copy, dependsOn: fatJar) {
     from('build/libs') {
         include fatJar.archiveName
@@ -74,7 +81,7 @@ task copyConfig(type: Copy) {
     into('docker/resources')
 }
 
-task buildDockerImage(type: Exec, dependsOn: ['copyJar', 'copyConfig']) {
+task buildDockerImage(type: Exec, dependsOn: ['copyJar', 'copyConfig', 'generateVersion']) {
     commandLine 'docker', 'build', '-t', image,  './docker'
 }
 

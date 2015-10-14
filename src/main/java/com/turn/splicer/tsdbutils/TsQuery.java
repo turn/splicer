@@ -294,6 +294,9 @@ public class TsQuery {
 	}
 
 	public void addSubQuery(TSSubQuery subQuery) {
+		if (queries == null) {
+			queries = new ArrayList<>();
+		}
 		queries.add(subQuery);
 	}
 
