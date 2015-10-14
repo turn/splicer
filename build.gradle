@@ -4,7 +4,11 @@ apply plugin: 'maven'
 group = 'com.turn'
 version = '0.1.1'
 ext.image = rootProject.name
-ext.tag = 'docker-dev.turn.com:5000/turn-tsdb/' + image + ':' + version
+ext.urlDev = 'docker-dev.turn.com:5000'
+ext.urlProd = 'docker.turn.com'
+ext.namespace = '/turn-tsdb/'
+ext.tagDev = urlDev + namespace + image + ':' + version
+ext.tagProd = urlProd + namespace + image + ':' + version
 
 description = "This project implements a TSDB Splicer, which will " +
         "partition long TSDB queries into smaller chunks, execute them in parallel, and splice the " +
@@ -74,11 +78,21 @@ task buildDockerImage(type: Exec, dependsOn: ['copyJar', 'copyConfig']) {
     commandLine 'docker', 'build', '-t', image,  './docker'
 }
 
-task tagDockerImage(type: Exec, dependsOn: buildDockerImage) {
-    commandLine 'docker', 'tag', image, tag
+task tagDockerDevImage(type: Exec, dependsOn: buildDockerImage) {
+    commandLine 'docker', 'tag', image, tagDev
 }
-task pushDockerImage(type: Exec, dependsOn: tagDockerImage) {
-    commandLine 'docker', 'push', tag
+
+task tagDockerProdImage(type: Exec, dependsOn: buildDockerImage) {
+    commandLine 'docker', 'tag', image, tagProd
+}
+
+task pushDockerDevImage(type: Exec, dependsOn: tagDockerDevImage) {
+    commandLine 'docker', 'push', tagDev
+}
+
+task pushDockerProdImage(type: Exec, dependsOn: tagDockerProdImage) {
+    environment 'HOME', '.'
+    commandLine 'docker', 'push', tagProd
 }
 
 clean.doLast {
