@@ -13,3 +13,5 @@ echo "build.hostname = $(hostname)" >> VERSION
 echo "build.date = $(date)" >> VERSION
 echo "build.user = $(whoami)" >> VERSION
 
+mkdir -p resources
+mv VERSION resources/
