@@ -1,5 +1,7 @@
 package com.turn.splicer;
 
+import com.turn.splicer.cache.JedisClient;
+
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.eclipse.jetty.server.Connector;
@@ -46,6 +48,8 @@ public class SplicerMain {
 				}
 			}
 		}
+
+		LOG.info("JedisClient Status: " + JedisClient.get().config());
 
 		final Server server = new Server();
 
