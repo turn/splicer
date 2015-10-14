@@ -9,6 +9,8 @@ import com.turn.splicer.tsdbutils.TsQuery;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -26,14 +28,30 @@ public class HttpWorker implements Callable<String> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(HttpWorker.class);
 
+	private static final Random RANDOM_GENERATOR = new Random();
+
 	public static final Map<String, LinkedBlockingQueue<String>> TSDMap = new HashMap<>();
 
 	private final TsQuery query;
 	private final RegionChecker checker;
 
+	private final String[] hosts;
+
 	public HttpWorker(TsQuery query, RegionChecker checker) {
 		this.query = query;
 		this.checker = checker;
+
+		Set<String> hosts = TSDMap.keySet();
+		if (hosts.size() == 0) {
+			throw new NullPointerException("No Query Hosts. TSDMap.size = 0");
+		}
+
+		this.hosts = new String[hosts.size()];
+		int i=0;
+		for (String h: hosts) {
+			this.hosts[i] = h;
+			i++;
+		}
 	}
 
 	@Override
@@ -60,11 +78,11 @@ public class HttpWorker implements Callable<String> {
 
 		TSDs = TSDMap.get(hostname);
 		if (TSDs == null) {
-			String host = TSDMap.keySet().iterator().next();
+			String host = select(); // randomly select a host (basic load balancing)
 			TSDs = TSDMap.get(host);
 			if (TSDs == null) {
-				LOG.error("We are not running TSDs on regionserver={}. Returning error", hostname);
-				return "{'error': 'We are not running TSDs on regionserver=" + hostname + "'}";
+				LOG.error("We are not running TSDs on regionserver={}. Fallback failed. Returning error", hostname);
+				return "{'error': 'Fallback to hostname=" + hostname + " failed.'}";
 			} else {
 				LOG.info("Falling back to " + host + " for queries");
 			}
@@ -101,6 +119,11 @@ public class HttpWorker implements Callable<String> {
 			TSDs.put(server);
 			LOG.info("Returned {} into the available queue", server);
 		}
+	}
+
+	private String select() {
+		int index = RANDOM_GENERATOR.nextInt(hosts.length);
+		return hosts[index];
 	}
 
 	private String stringify(TsQuery query)
