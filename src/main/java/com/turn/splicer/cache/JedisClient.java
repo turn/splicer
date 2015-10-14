@@ -29,6 +29,13 @@ public class JedisClient {
 			if (hp.length != 2) throw new IllegalArgumentException("Bad config for redis server");
 			jedisPool = new JedisPool(new JedisPoolConfig(), hp[0], Integer.parseInt(hp[1]));
 
+			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+				@Override
+				public void run() {
+					jedisPool.close();
+				}
+			}));
+
 		} else {
 			jedisPool = null;
 		}
