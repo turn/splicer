@@ -79,7 +79,7 @@ task copyConfig(type: Copy) {
     into('docker/resources')
 }
 
-task buildDockerImage(type: Exec, dependsOn: ['copyJar', 'copyConfig']) {
+task buildDockerImage(type: Exec, dependsOn: ['copyJar', 'copyConfig', 'generateVersion']) {
     commandLine 'docker', 'build', '-t', image,  './docker'
 }
 

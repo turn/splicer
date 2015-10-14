@@ -6,8 +6,6 @@ RUN	      mkdir -p /data/tsdb-splicer/cache
 
 RUN 	  mkdir -p /var/log/tsdb-splicer
 
-RUN 	  ./docker/version.sh
-
 ENV	      CLASSPATH  /usr/share/tsdb-splicer
 ENV	      BASE       /usr/share/tsdb-splicer
 ENV	      TSDB_PORT  4244
