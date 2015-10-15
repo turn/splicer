@@ -21,4 +21,4 @@ ADD	      resources $WORKDIR/resources/
 
 WORKDIR   $WORKDIR
 
-CMD	      java -server -classpath $WORKDIR/resources:$WORKDIR/tsdb-splicer-all-0.1.2-14oct15.jar com.turn.splicer.SplicerMain --port $SPLICER_PORT --config=$WORKDIR/resources/splicer.conf
+CMD	      java -server -classpath $WORKDIR/resources:$WORKDIR/tsdb-splicer-all-0.1.2-15oct15.jar com.turn.splicer.SplicerMain --port $SPLICER_PORT --config=$WORKDIR/resources/splicer.conf
