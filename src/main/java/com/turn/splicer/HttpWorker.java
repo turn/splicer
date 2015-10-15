@@ -60,12 +60,14 @@ public class HttpWorker implements Callable<String> {
 		LOG.debug("Start time={}, End time={}", Const.tsFormat(query.startTime()),
 				Const.tsFormat(query.endTime()));
 
+		String metricName = query.getQueries().get(0).getMetric();
 		String cacheResult = JedisClient.get().get(this.query.toString());
 		if (cacheResult != null) {
+			LOG.info("Cache hit for start=" + query.startTime()
+					+ ", end=" + query.endTime() + ", metric=" + metricName);
 			return cacheResult;
 		}
 
-		String metricName = query.getQueries().get(0).getMetric();
 		String hostname = checker.getBestRegionHost(metricName,
 				query.startTime() / 1000, query.endTime() / 1000);
 		LOG.debug("Found region server hostname={} for metric={}", hostname, metricName);
