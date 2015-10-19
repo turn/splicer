@@ -1,7 +1,7 @@
 FROM docker.turn.com/tops-base/jdk7:latest
 MAINTAINER instrumentation@turn.com
 
-ENV       VERSION 0.1.3-2015101901
+ENV       VERSION 0.1.3-2015101902
 ENV       WORKDIR /usr/share/tsdb-splicer
 ENV       DATADIR /data/tsdb-splicer
 ENV       LOGDIR  /var/log/tsdb-splicer
@@ -21,4 +21,4 @@ ADD	      resources $WORKDIR/resources/
 
 WORKDIR   $WORKDIR
 
-CMD	      /bin/bash -c 'java -server -classpath $WORKDIR/resources:$WORKDIR:$WORKDIR/tsdb-splicer-all-$VERSION.jar com.turn.splicer.SplicerMain --port $SPLICER_PORT --config=$WORKDIR/resources/splicer.conf'
+ENTRYPOINT /bin/bash -c "java -server -classpath $WORKDIR/resources:$WORKDIR:$WORKDIR/tsdb-splicer-all-$VERSION.jar com.turn.splicer.SplicerMain --port $SPLICER_PORT --config=$WORKDIR/resources/splicer.conf"
