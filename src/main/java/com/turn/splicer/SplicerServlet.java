@@ -108,6 +108,7 @@ public class SplicerServlet extends HttpServlet {
 		List<ExpressionTree> expressionTrees = null;
 
 		final String[] expressions = request.getParameterValues("x");
+
 		if(expressions != null) {
 			expressionTrees = new ArrayList<ExpressionTree>();
 			List<String> metricQueries = new ArrayList<String>();
@@ -120,6 +121,8 @@ public class SplicerServlet extends HttpServlet {
 			}
 		}
 
+		//not supporting metric queries from GET yet...
+		//TODO: fix this or decide if we need to support "m" type queries
 		if(request.getParameter("m") != null) {
 			final List<String> legacy_queries = Arrays.asList(request.getParameterValues("m"));
 			for(String q: legacy_queries) {
@@ -137,21 +140,17 @@ public class SplicerServlet extends HttpServlet {
 
 		try (RegionChecker checker = REGION_UTIL.getRegionChecker()) {
 			List<TsdbResult[]> exprResults = Lists.newArrayList();
-
-			if(expressionTrees != null && expressionTrees.size() == 1) {
-				TsdbResult[] results = expressionTrees.get(0).evaluateAll();
-				int i = 0;
-				for(TsdbResult result: results) {
-					System.out.println("Result" + result + "Index" + i);
-					i++;
-				}
-				exprResults.add(results);
-				response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
-					exprResults)));
-			} else {
-				System.out.println("this is broken right now");
+			if(expressionTrees == null || expressionTrees.size() == 0) {
+				System.out.println("expression trees == null...figure this out later");
+				response.getWriter().write("No expression or error parsing expression");
 			}
-
+			else {
+				for(ExpressionTree expressionTree: expressionTrees) {
+					exprResults.add(expressionTree.evaluateAll());
+				}
+				response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
+						exprResults)));
+			}
 			response.getWriter().flush();
 		}
 	}

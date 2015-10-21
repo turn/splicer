@@ -82,7 +82,7 @@ public class QueryAwareResultsMerger {
 			TsdbResult rightItem = leftIndex.remove(ts);
 			if (rightItem == null) {
 				LOG.info("Did not find counterpart for ts={}", ts);
-				continue;
+				//continue;
 			}
 			TsdbResult merge = merge(leftItem, rightItem);
 			mergeResults.add(merge);
