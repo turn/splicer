@@ -98,7 +98,8 @@ public final class SplicerUtils {
         for (String expr : exprs) {
             SyntaxChecker checker = new SyntaxChecker(new StringReader(expr));
             checker.setMetricQueries(metricQueries);
-            checker.setTsQuery(tsQuery);
+            checker.setTsQuery(new TsQuery(tsQuery));
+
             try {
                 ExpressionTree tree = checker.EXPRESSION();
                 expressionTrees.add(tree);

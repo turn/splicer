@@ -690,17 +690,20 @@ public class Functions {
 
 		int time = Integer.parseInt(param.substring(1, tuIndex + 1));
 		String unit = param.substring(tuIndex + 1, param.length() - 1);
-
-		if ("min".equals(unit)) {
+		if ("sec".equals(unit)) {
+			return TimeUnit.MILLISECONDS.convert(time, TimeUnit.SECONDS);
+		} else if ("min".equals(unit)) {
 			return TimeUnit.MILLISECONDS.convert(time, TimeUnit.MINUTES);
 		} else if ("hr".equals(unit)) {
 			return TimeUnit.MILLISECONDS.convert(time, TimeUnit.HOURS);
-		} else if ("sec".equals(unit)) {
-			return TimeUnit.MILLISECONDS.convert(time, TimeUnit.SECONDS);
-		} else {
+		} else if ("day".equals(unit) || "days".equals(unit)) {
+			return TimeUnit.MILLISECONDS.convert(time, TimeUnit.DAYS);
+		} else if ("week".equals(unit) || "weeks".equals(unit)) {
+			//didn't have week so small cheat here
+			return TimeUnit.MILLISECONDS.convert(time*7, TimeUnit.DAYS);
+		}
+		else {
 			throw new RuntimeException("unknown time unit=" + unit);
 		}
-
 	}
-
 }
