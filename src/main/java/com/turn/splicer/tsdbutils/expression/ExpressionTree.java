@@ -4,11 +4,15 @@ import com.turn.splicer.SplicerServlet;
 import com.turn.splicer.hbase.RegionChecker;
 import com.turn.splicer.merge.TsdbResult;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -32,6 +36,9 @@ public class ExpressionTree {
 
 	private SplicerQueryRunner queryRunner;
 
+	private static ExecutorService pool = Executors.newCachedThreadPool();
+
+
 	enum Parameter {
 		SUB_EXPRESSION,
 		METRIC_QUERY
@@ -46,6 +53,7 @@ public class ExpressionTree {
 		this.dataQuery = dataQuery;
 		this.queryRunner = new SplicerQueryRunner();
 	}
+
 
 	public void addSubExpression(ExpressionTree child, int paramIndex) {
 		if (subExpressions == null) {
@@ -71,8 +79,8 @@ public class ExpressionTree {
 		funcParams.add(param);
 	}
 
-	public TsdbResult[] evaluateAll() {
-		List<TsdbResult[]> orderedSubResults = Lists.newArrayList();
+	public TsdbResult[] evaluateAll() throws ExecutionException, InterruptedException {
+
 		List<Integer> metricQueryKeys = null;
 
 		if (subMetricQueries != null && subMetricQueries.size() > 0) {
@@ -93,18 +101,21 @@ public class ExpressionTree {
 
 			long timeshift = -1;
 			if (param.startsWith("'") && param.endsWith("'")) {
-				timeshift = Functions.parseParam(param) / 1000;
+				timeshift = Functions.parseParam(param);
 			} else {
 				throw new RuntimeException("Invalid timeshift parameter: eg '10min'");
 			}
 
-			dataQuery.validateTimes();
 			long newStart = dataQuery.startTime() - timeshift;
+			long oldStart = dataQuery.startTime();
 			dataQuery.setStart(Long.toString(newStart));
 			long newEnd = dataQuery.endTime() - timeshift;
+			long oldEnd = dataQuery.endTime();
 			dataQuery.setEnd(Long.toString(newEnd));
 			dataQuery.validateTimes();
 		}
+
+		List<Future<TsdbResult[]>> tsdbResultFutures = new ArrayList(parameterSourceIndex.size());
 
 		for (int i = 0; i < parameterSourceIndex.size(); i++) {
 			Parameter p = parameterSourceIndex.get(i);
@@ -120,25 +131,25 @@ public class ExpressionTree {
 
 				TsQuery realQuery = TsQuery.validCopyOf(dataQuery);
 
-
 				SplicerUtils.parseMTypeSubQuery(query, realQuery);
 
 				realQuery.validateAndSetQuery();
 				RegionChecker checker = SplicerServlet.REGION_UTIL.getRegionChecker();
 
-				//run the query
-				try {
-					orderedSubResults.add(queryRunner.sliceAndRunQuery(realQuery, checker));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				tsdbResultFutures.add(pool.submit(new QueryRunnerWorker(queryRunner, realQuery, checker)));
 
 			} else if (p == Parameter.SUB_EXPRESSION) {
 				ExpressionTree nextExpression = subExpressions.get(subExprPointer++);
-				orderedSubResults.add(nextExpression.evaluateAll());
+				tsdbResultFutures.add(pool.submit(new ExpressionTreeWorker(nextExpression)));
 			} else {
 				throw new RuntimeException("Unknown value: " + p);
 			}
+		}
+
+		List<TsdbResult[]> orderedSubResults = Lists.newArrayList();
+
+		for (Future<TsdbResult[]> tsdbResultFuture : tsdbResultFutures) {
+			orderedSubResults.add(tsdbResultFuture.get());
 		}
 
 		return expr.evaluate(dataQuery, orderedSubResults, funcParams);

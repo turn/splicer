@@ -14,18 +14,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import com.turn.splicer.tsdbutils.expression.ExpressionTreeWorker;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +30,8 @@ public class SplicerServlet extends HttpServlet {
 	private static final Logger LOG = LoggerFactory.getLogger(SplicerServlet.class);
 
 	public static RegionUtil REGION_UTIL = new RegionUtil();
+
+	private static ExecutorService pool = Executors.newCachedThreadPool();
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -114,11 +111,6 @@ public class SplicerServlet extends HttpServlet {
 			List<String> metricQueries = new ArrayList<String>();
 
 			SplicerUtils.syntaxCheck(expressions, dataQuery, metricQueries, expressionTrees);
-
-			for(String mq: metricQueries) {
-				LOG.info("metric query: " + mq);
-					SplicerUtils.parseMTypeSubQuery(mq, dataQuery);
-			}
 		}
 
 		//not supporting metric queries from GET yet...
@@ -129,8 +121,6 @@ public class SplicerServlet extends HttpServlet {
 				SplicerUtils.parseMTypeSubQuery(q, dataQuery);
 			}
 		}
-
-		dataQuery.validateAndSetQuery();
 
 		LOG.info("Serving query={}", dataQuery);
 
@@ -145,13 +135,26 @@ public class SplicerServlet extends HttpServlet {
 				response.getWriter().write("No expression or error parsing expression");
 			}
 			else {
-				for(ExpressionTree expressionTree: expressionTrees) {
-					exprResults.add(expressionTree.evaluateAll());
+				try {
+					List<Future<TsdbResult[]>> futureList = new ArrayList<Future<TsdbResult[]>>(expressionTrees.size());
+
+					TsQuery prev = null;
+
+					for (ExpressionTree expressionTree : expressionTrees) {
+						futureList.add(pool.submit(new ExpressionTreeWorker(expressionTree)));
+					}
+
+					for (Future<TsdbResult[]> future : futureList) {
+						exprResults.add(future.get());
+					}
+					response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
+							exprResults)));
+				} catch (Exception e) {
+					LOG.error("Could not evaluate expression tree", e);
+					e.printStackTrace();
 				}
-				response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
-						exprResults)));
+				response.getWriter().flush();
 			}
-			response.getWriter().flush();
 		}
 	}
 

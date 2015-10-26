@@ -79,18 +79,26 @@ public class TsQuery {
 
 	}
 
-//	public TsQuery(TsQuery tsq) {
-//		this.start = tsq.getStart();
-//		this.end = tsq.getEnd();
-//		this.timezone = tsq.getTimezone();
-//		this.options = new HashMap(tsq.getOptions());
-//		this.padding = tsq.getPadding();
-//		this.no_annotations = tsq.getNoAnnotations();
-//		this.with_global_annotations = tsq.getGlobalAnnotations();
-//		this.show_tsuids = tsq.getShowTSUIDs();
-//		//not sure if I need subqueries yet or not
-//		this.
-//	}
+	/**
+	 * Shallow copy constructor
+	 * start, end, timezone, are Strings so those are immutable
+	 */
+	public TsQuery(TsQuery old) {
+		this.start = old.start;
+		this.end = old.end;
+		this.timezone = old.timezone;
+		this.options = old.options;
+		this.padding = old.padding;
+		this.no_annotations = old.padding;
+		this.with_global_annotations = old.with_global_annotations;
+		this.show_tsuids = old.show_tsuids;
+		this.queries = old.queries;
+		this.ms_resolution = old.ms_resolution;
+
+		//start and end must be set with call to validate times
+		this.validateTimes();
+	}
+
 
 	/**
 	 * Runs through query parameters to make sure it's a valid request.

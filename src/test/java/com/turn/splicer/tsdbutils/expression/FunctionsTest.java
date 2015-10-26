@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -80,9 +81,9 @@ public class FunctionsTest {
 
 		correctResult.setMetric("tcollector.collector.lines_received");
 		Map<String, Object> dps = new HashMap<String, Object>();
-		dps.put("1001", 10.0);
-		dps.put("1002", 20.0);
-		dps.put("1003", 30.0);
+		dps.put("2", 10.0);
+		dps.put("3", 20.0);
+		dps.put("4", 30.0);
 
 		correctResult.setTags(new TsdbResult.Tags(new HashMap<String, String>()));
 
@@ -122,11 +123,11 @@ public class FunctionsTest {
 	 * @param outcome
 	 * @throws IOException
 	 */
-	private void evaluateQuery(String query, TsdbResult mockQueryResult, TsdbResult[] toCompare, boolean outcome) throws IOException {
+	private void evaluateQuery(String query, TsdbResult mockQueryResult, TsdbResult[] toCompare, boolean outcome) throws IOException, ExecutionException, InterruptedException {
 		evaluateQuery(query, mockQueryResult, toCompare, outcome, null, null);
 	}
 
-	private void evaluateQuery(String query, TsdbResult mockQueryResult, TsdbResult[] toCompare, boolean outcome, String start, String end) throws IOException {
+	private void evaluateQuery(String query, TsdbResult mockQueryResult, TsdbResult[] toCompare, boolean outcome, String start, String end) throws IOException, ExecutionException, InterruptedException {
 		setupExpressionTree(query, start, end);
 		MockitoAnnotations.initMocks(this);
 
@@ -151,11 +152,11 @@ public class FunctionsTest {
 	}
 
 		@Test
-	public void evaluateScaleSimple() throws IOException {
+	public void evaluateScaleSimple() throws IOException, ExecutionException, InterruptedException {
 		evaluateQuery("scale(sum:1m-avg:tcollector.collector.lines_received,10)", getDefaultQueryResult(), getCorrectResult(), true, "1000", "1001");
 	}
 
-	@Test void evaluateAliasSimple() throws IOException {
+	@Test void evaluateAliasSimple() throws IOException, ExecutionException, InterruptedException {
 		TsdbResult correctResult = getDefaultQueryResult();
 
 		TsdbResult[] correctResultArray = new TsdbResult[]{correctResult};
@@ -167,7 +168,8 @@ public class FunctionsTest {
 	}
 
 	@Test
-	public void timeShiftFunctionSimple() throws IOException {
-		evaluateQuery("timeShift(sum:1m-avg:tcollector.collector.lines_received,'1000sec')", getDefaultQueryResult(), getCorrectTimeShiftResult(), true, "999", "1000");
+	public void timeShiftFunctionSimple() throws IOException, ExecutionException, InterruptedException {
+		//start end time given in millis
+		evaluateQuery("timeShift(sum:1m-avg:tcollector.collector.lines_received,'1sec')", getDefaultQueryResult(), getCorrectTimeShiftResult(), true, "2000", "4000");
 	}
 }

@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 
 group = 'com.turn'
-version = '0.1.4-2015102101'
+version = '0.1.4-2015102301'
 ext.image = rootProject.name
 ext.urlDev = 'docker-dev.turn.com:5000'
 ext.urlProd = 'docker.turn.com'
