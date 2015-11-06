@@ -24,7 +24,7 @@ public class SeekableViewDataPointImpl implements SeekableView {
 
     @Override
     public boolean hasNext() {
-        return currentIndex < dps.length - 1;
+        return currentIndex < dps.length;
     }
 
     @Override
