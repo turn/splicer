@@ -1,13 +1,13 @@
 FROM docker.turn.com/tops-base/jdk7:latest
 MAINTAINER instrumentation@turn.com
 
-ENV       VERSION 0.1.4-2015110501
+ENV       VERSION 0.1.4-2015111601
 ENV       WORKDIR /usr/share/tsdb-splicer
 ENV       DATADIR /data/tsdb-splicer
 ENV       LOGDIR  /var/log/tsdb-splicer
 RUN	      mkdir -p $WORKDIR/resources
 RUN	      mkdir -p $DATADIR/cache
-RUN 	    mkdir -p $LOGDIR
+RUN       mkdir -p $LOGDIR
 
 ENV	      CLASSPATH  $WORKDIR
 ENV	      BASE       $WORKDIR
