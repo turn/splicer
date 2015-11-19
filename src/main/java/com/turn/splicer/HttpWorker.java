@@ -91,7 +91,7 @@ public class HttpWorker implements Callable<String> {
 		}
 
 		String server = TSDs.take();
-		String uri = "http://" + server + "/api/query";
+		String uri = "http://" + server + "/api/query/qexp/";
 
 		CloseableHttpClient postman = HttpClientBuilder.create().build();
 		try {
