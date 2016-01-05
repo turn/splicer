@@ -129,7 +129,7 @@ public class SplicerServlet extends HttpServlet {
 				Const.tsFormat(dataQuery.endTime()));
 
     response.setCharacterEncoding("UTF-8");
-    response.setContentType("application/json;");
+    response.setContentType("application/json");
 
 		try (RegionChecker checker = REGION_UTIL.getRegionChecker()) {
 			List<TsdbResult[]> exprResults = Lists.newArrayList();
@@ -183,7 +183,7 @@ public class SplicerServlet extends HttpServlet {
 				Const.tsFormat(tsQuery.endTime()));
 
     response.setCharacterEncoding("UTF-8");
-    response.setContentType("application/json;");
+    response.setContentType("application/json");
 
 		try (RegionChecker checker = REGION_UTIL.getRegionChecker()) {
 
