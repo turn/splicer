@@ -101,6 +101,10 @@ public class TsdbResult {
 		return tags;
 	}
 
+	public String getExpression() {
+		return metric;
+	}
+
 	public void setTags(Tags tags) {
 		this.tags = tags;
 	}

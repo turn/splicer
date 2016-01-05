@@ -128,6 +128,9 @@ public class SplicerServlet extends HttpServlet {
 				Const.tsFormat(dataQuery.startTime()),
 				Const.tsFormat(dataQuery.endTime()));
 
+    response.setCharacterEncoding("UTF-8");
+    response.setContentType("application/json;");
+
 		try (RegionChecker checker = REGION_UTIL.getRegionChecker()) {
 			List<TsdbResult[]> exprResults = Lists.newArrayList();
 			if(expressionTrees == null || expressionTrees.size() == 0) {
@@ -153,7 +156,6 @@ public class SplicerServlet extends HttpServlet {
 					LOG.error("Could not evaluate expression tree", e);
 					e.printStackTrace();
 				}
-				response.getWriter().flush();
 			}
 		}
 	}
@@ -180,6 +182,9 @@ public class SplicerServlet extends HttpServlet {
 				Const.tsFormat(tsQuery.startTime()),
 				Const.tsFormat(tsQuery.endTime()));
 
+    response.setCharacterEncoding("UTF-8");
+    response.setContentType("application/json;");
+
 		try (RegionChecker checker = REGION_UTIL.getRegionChecker()) {
 
 			List<TSSubQuery> subQueries = new ArrayList<>(tsQuery.getQueries());
@@ -203,7 +208,6 @@ public class SplicerServlet extends HttpServlet {
 				}
 				response.getWriter().write(TsdbResult.toJson(SplicerUtils.flatten(
 						resultsFromAllSubQueries)));
-				response.getWriter().flush();
 			}
 		}
 	}
