@@ -84,11 +84,11 @@ task buildDockerImage(type: Exec, dependsOn: ['copyJar', 'copyConfig', 'generate
 }
 
 task tagDockerDevImage(type: Exec, dependsOn: buildDockerImage) {
-    commandLine 'docker', 'tag', image, tagDev
+    commandLine 'docker', 'tag', '-f', image, tagDev
 }
 
 task tagDockerProdImage(type: Exec, dependsOn: buildDockerImage) {
-    commandLine 'docker', 'tag', image, tagProd
+    commandLine 'docker', 'tag', '-f', image, tagProd
 }
 
 task pushDockerDevImage(type: Exec, dependsOn: tagDockerDevImage) {
