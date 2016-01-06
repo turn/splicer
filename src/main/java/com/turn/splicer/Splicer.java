@@ -12,8 +12,8 @@ public class Splicer {
 
 	private static final Logger LOG = LoggerFactory.getLogger(Splicer.class);
 
-	private static final int SLICE_SIZE = 3600;
-	private static final int OVERFLOW = 300;
+	public static final int SLICE_SIZE = 3600;
+	public static final int OVERFLOW = 300;
 
 	private final TsQuery tsQuery;
 
@@ -55,19 +55,19 @@ public class Splicer {
 		long end = startTime - (startTime % bucket_size) + bucket_size;
 		TsQuery first = TsQuery.sliceOf(tsQuery, startTime - (startTime % bucket_size), end + overflow_in_millis);
 		slices.add(first);
-		LOG.info("First interval is {} to {}", Const.tsFormat(first.startTime()), Const.tsFormat(first.endTime()));
+		LOG.debug("First interval is {} to {}", Const.tsFormat(first.startTime()), Const.tsFormat(first.endTime()));
 
 		while (end + bucket_size < endTime) {
 			TsQuery slice = TsQuery.sliceOf(tsQuery, end, end + bucket_size + overflow_in_millis);
 			slices.add(slice);
 			end = end + bucket_size;
-			LOG.info("Add interval# {} from {} to {}", slices.size(),
+			LOG.debug("Add interval# {} from {} to {}", slices.size(),
 					Const.tsFormat(slice.startTime()),
 					Const.tsFormat(slice.endTime()));
 		}
 
 		slices.add(TsQuery.sliceOf(tsQuery, end, endTime));
-		LOG.info("Last interval is {} to {}", Const.tsFormat(end), Const.tsFormat(endTime));
+		LOG.debug("Last interval is {} to {}", Const.tsFormat(end), Const.tsFormat(endTime));
 
 		return slices;
 	}
