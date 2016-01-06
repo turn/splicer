@@ -8,6 +8,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.turn.splicer.merge.TsdbResult;
 import com.turn.splicer.tsdbutils.expression.AggregationIterator;
+import com.turn.splicer.tsdbutils.expression.EndpointAligningAggregationIterator;
 import com.turn.splicer.tsdbutils.expression.Expression;
 import com.turn.splicer.tsdbutils.expression.SeekableViewDataPointImpl;
 import org.apache.log4j.Logger;
@@ -372,7 +373,7 @@ public class Functions {
 				e.printStackTrace();
 			}
 
-			SeekableView view = (new AggregationIterator(views,
+			SeekableView view = (new EndpointAligningAggregationIterator(views,
 					dataQuery.startTime() / 1000, dataQuery.endTime() / 1000,
 					Aggregators.MULTIPLY, Aggregators.Interpolation.LERP, false));
 
@@ -492,7 +493,7 @@ public class Functions {
 				e.printStackTrace();
 			}
 
-			SeekableView view = (new AggregationIterator(views,
+			SeekableView view = (new EndpointAligningAggregationIterator(views,
 					dataQuery.startTime() / 1000, dataQuery.endTime() / 1000,
 					Aggregators.SUM, Aggregators.Interpolation.LERP, false));
 
