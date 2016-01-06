@@ -1,6 +1,8 @@
 package com.turn.splicer.tsdbutils;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import com.turn.splicer.Const;
 import com.turn.splicer.HttpWorker;
 import com.turn.splicer.Splicer;
 import com.turn.splicer.hbase.RegionChecker;
@@ -92,7 +94,22 @@ public class SplicerQueryRunner {
 			throw new RuntimeException(e);
 		} finally {
 			svc.shutdown();
-			LOG.info("Shutdown thread pool");
+			LOG.info("Shutdown thread pool for query=" + stringify(query));
 		}
 	}
+
+	private String stringify(TsQuery query)
+	{
+		String subs = "";
+		for (TSSubQuery sub: query.getQueries()) {
+			if (subs.length() > 0) subs += ",";
+			subs += "m=[" + sub.getMetric() + sub.getTags()
+					+ ", downsample=" + sub.getDownsample()
+					+ ", rate=" + sub.getRate()
+					+ ", tags=" + sub.getTags()
+					+ "]";
+		}
+		return "{" + query.startTime() + " to " + query.endTime() + ", " + subs + "}";
+	}
+
 }

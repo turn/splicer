@@ -94,12 +94,14 @@ public class Config {
 
 		InputStream is = getClass().getClassLoader().getResourceAsStream(VERSION_FILE);
 		if (is != null) {
-			LOG.info("Loaded {} bytes of version file configuration", is.available());
+			LOG.debug("Loaded {} bytes of version file configuration", is.available());
 			Properties versionProps = new Properties();
 			versionProps.load(is);
 			for (Map.Entry<Object, Object> e: versionProps.entrySet()) {
 				map.put(String.valueOf(e.getKey()), String.valueOf(e.getValue()));
 			}
+		}  else {
+			LOG.error("No version file found on classpath. VERSION_FILE={}", VERSION_FILE);
 		}
 
 		jgen.writeStartObject();
