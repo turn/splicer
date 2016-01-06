@@ -57,7 +57,7 @@ public class RegionChecker implements Closeable {
 			List<HRegionLocation> regions = table.getRegionsInRange(startRowKey, endRowKey);
 			if (regions != null && regions.size() > 0) {
 				HRegionLocation reg = regions.get(0);
-				LOG.info("Found region hostname: " + reg.getHostname());
+				LOG.debug("Found region hostname: " + reg.getHostname());
 				return reg.getHostname();
 			} else {
 				LOG.info("Regions is null");

@@ -63,7 +63,7 @@ public class HttpWorker implements Callable<String> {
 		String metricName = query.getQueries().get(0).getMetric();
 		String cacheResult = JedisClient.get().get(this.query.toString());
 		if (cacheResult != null) {
-			LOG.info("Cache hit for start=" + query.startTime()
+			LOG.debug("Cache hit for start=" + query.startTime()
 					+ ", end=" + query.endTime() + ", metric=" + metricName);
 			return cacheResult;
 		}
@@ -101,7 +101,7 @@ public class HttpWorker implements Callable<String> {
 			StringEntity input = new StringEntity(JSON.serializeToString(query));
 			input.setContentType("application/json");
 			postRequest.setEntity(input);
-			LOG.info("Sending request to: " + uri + " for query = " + query);
+			LOG.debug("Sending request to: {} for query {} ", uri, query);
 
 			HttpResponse response = postman.execute(postRequest);
 
@@ -112,14 +112,26 @@ public class HttpWorker implements Callable<String> {
 
 			List<String> dl = IOUtils.readLines(response.getEntity().getContent());
 			String result = StringUtils.join(dl, "");
-			LOG.info("Result={}", result);
-			JedisClient.get().put(this.query.toString(), result);
+			LOG.debug("Result={}", result);
+			if (isCacheable(query)) {
+				JedisClient.get().put(this.query.toString(), result);
+			}
 			return result;
 		} finally {
 			IOUtils.closeQuietly(postman);
 
 			TSDs.put(server);
-			LOG.info("Returned {} into the available queue", server);
+			LOG.debug("Returned {} into the available queue", server);
+		}
+	}
+
+	private boolean isCacheable(TsQuery query) {
+		long interval = query.endTime() - query.startTime();
+
+		if (Config.get().getBoolean("slice.overflow.enable")) {
+			return interval == (Splicer.SLICE_SIZE + Splicer.OVERFLOW) * 1000;
+		} else {
+			return interval == (Splicer.SLICE_SIZE) * 1000;
 		}
 	}
 
