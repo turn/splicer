@@ -4,21 +4,25 @@
  */
 package com.turn.splicer.tsdbutils;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import com.turn.splicer.merge.TsdbResult;
 import com.turn.splicer.tsdbutils.expression.AggregationIterator;
 import com.turn.splicer.tsdbutils.expression.EndpointAligningAggregationIterator;
 import com.turn.splicer.tsdbutils.expression.Expression;
 import com.turn.splicer.tsdbutils.expression.SeekableViewDataPointImpl;
-import org.apache.log4j.Logger;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Functions {
 
-	private static final Logger logger = Logger.getLogger(Functions.class);
+	private static final Logger logger = LoggerFactory.getLogger(Functions.class);
 
 	private static enum MaxExpressionType {
 		CURRENT, MAX
@@ -291,8 +295,6 @@ public class Functions {
 				}
 			}
 
-			logger.info("Before Sorting: " + Arrays.toString(maxesPerTS));
-
 			Arrays.sort(maxesPerTS, new Comparator<Entry>() {
 				@Override
 				public int compare(Entry o1, Entry o2) {
@@ -306,9 +308,6 @@ public class Functions {
 					return -1 * Double.compare(o1.val, o2.val);
 				}
 			});
-
-			logger.info("After Sorting: " + Arrays.toString(maxesPerTS));
-
 
 			//so if I understand it results[i] should be filled with one
 			// of the k series with highest max
@@ -370,14 +369,12 @@ public class Functions {
 				views[0] = new SeekableViewDataPointImpl(x.getDps().getDataPointsFromTreeMap());
 				views[1] = new SeekableViewDataPointImpl(y.getDps().getDataPointsFromTreeMapReciprocal());
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error("Could not create view", e);
 			}
 
 			SeekableView view = (new EndpointAligningAggregationIterator(views,
 					dataQuery.startTime() / 1000, dataQuery.endTime() / 1000,
 					Aggregators.MULTIPLY, Aggregators.Interpolation.LERP, false));
-
-			List<DataPoint> points = Lists.newArrayList();
 
 			TsdbResult singleResult;
 
@@ -433,8 +430,6 @@ public class Functions {
 			SeekableView view = (new AggregationIterator(views,
 					dataQuery.startTime() / 1000, dataQuery.endTime() / 1000,
 					Aggregators.MULTIPLY, Aggregators.Interpolation.LERP, false));
-
-			List<DataPoint> points = Lists.newArrayList();
 
 			TsdbResult singleResult;
 
@@ -496,8 +491,6 @@ public class Functions {
 			SeekableView view = (new EndpointAligningAggregationIterator(views,
 					dataQuery.startTime() / 1000, dataQuery.endTime() / 1000,
 					Aggregators.SUM, Aggregators.Interpolation.LERP, false));
-
-			List<DataPoint> points = Lists.newArrayList();
 
 			TsdbResult singleResult;
 
