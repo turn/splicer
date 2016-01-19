@@ -2,6 +2,7 @@ package com.turn.splicer.merge;
 
 import com.turn.splicer.tsdbutils.DataPoint;
 import com.turn.splicer.tsdbutils.MutableDataPoint;
+import com.turn.splicer.tsdbutils.expression.BadNumberException;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -31,9 +32,13 @@ import com.fasterxml.jackson.databind.node.NumericNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.base.Preconditions;
 import com.google.common.math.DoubleMath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class TsdbResult {
+
+	private static final Logger logger = LoggerFactory.getLogger(TsdbResult.class);
 
 	protected static final ObjectMapper JSON_MAPPER = (new ObjectMapperFactory()).get();
 
@@ -145,11 +150,15 @@ public class TsdbResult {
 		}
 
 		public void addPoint(DataPoint dp) {
-			String timestamp = String.valueOf(dp.timestamp());
-			if(dp.isInteger()) {
-				map.put(timestamp, dp.longValue());
-			} else {
-				map.put(timestamp, dp.doubleValue());
+			try {
+				String timestamp = String.valueOf(dp.timestamp());
+				if (dp.isInteger()) {
+					map.put(timestamp, dp.longValue());
+				} else {
+					map.put(timestamp, dp.doubleValue());
+				}
+			} catch (BadNumberException be) {
+				logger.error("Caught BNE. Skipping data point.");
 			}
 		}
 
@@ -211,11 +220,15 @@ public class TsdbResult {
 					double doubleVal = ((Double) val).doubleValue();
 					if (DoubleMath.fuzzyCompare(doubleVal, 0, 1E-7) != 0) {
 						dp.reset(timestamp, 1 / doubleVal);
+					} else {
+						dp.reset(timestamp, Double.POSITIVE_INFINITY);
 					}
 				} else if(val instanceof Long) {
 					long longVal = ((Long) val).longValue();
 					if(longVal != 0) {
 						dp.reset(timestamp, 1 / longVal);
+					} else {
+						dp.reset(timestamp, Double.POSITIVE_INFINITY);
 					}
 				} else {
 					throw new Exception("Unexpected type in map: " + val.getClass());

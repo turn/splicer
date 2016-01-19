@@ -12,23 +12,26 @@
 // see <http://www.gnu.org/licenses/>.
 package com.turn.splicer.tsdbutils.expression;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.turn.splicer.Const;
-import com.turn.splicer.tsdbutils.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.turn.splicer.tsdbutils.Aggregator;
+import com.turn.splicer.tsdbutils.Aggregators;
+import com.turn.splicer.tsdbutils.DataPoint;
+import com.turn.splicer.tsdbutils.IllegalDataException;
+import com.turn.splicer.tsdbutils.SeekableView;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.TimeUnit;
+
+import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Iterator that aggregates multiple spans or time series data and does linear
  * interpolation (lerp) for missing data points.
  * <p/>
- * This where the real business of {@link SpanGroup} is.  This iterator
- * provides a merged, aggregated view of multiple {@link Span}s.  The data
+ * This where the real business of SpanGroup is.  This iterator
+ * provides a merged, aggregated view of multiple Spans.  The data
  * points in all the Spans are returned in chronological order.  Each time
  * we return a data point from a span, we aggregate it with the current
  * value from all the other Spans.  If other Spans don't have a value at
@@ -151,7 +154,7 @@ public class AggregationIterator implements SeekableView, DataPoint,
 	private final boolean rate;
 
 	/**
-	 * Where we are in each {@link Span} in the group.
+	 * Where we are in each Span in the group.
 	 * The iterators in this array always points to 2 values ahead of the
 	 * current value, as we pre-load the current and the next values into the
 	 * {@link #timestamps} and {@link #values} member.
@@ -547,7 +550,7 @@ public class AggregationIterator implements SeekableView, DataPoint,
 				pos = -1;
 				final double value = aggregator.runDouble(this);
 				if (value != value || Double.isInfinite(value)) {
-					throw new IllegalStateException("Got NaN or Infinity: "
+					throw new BadNumberException("Got NaN or Infinity: "
 							+ value + " in this " + this);
 				}
 				return value;
