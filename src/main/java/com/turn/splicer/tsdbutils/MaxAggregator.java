@@ -16,6 +16,8 @@
 
 package com.turn.splicer.tsdbutils;
 
+import net.opentsdb.core.Aggregator;
+
 /**
  * Extends the Aggregator interface to provide functionality for "max" style
  * aggregators that first iterate over all data points to determine a max

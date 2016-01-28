@@ -16,9 +16,10 @@
 
 package com.turn.splicer.tsdbutils.expression;
 
-import com.turn.splicer.tsdbutils.Aggregator;
-import com.turn.splicer.tsdbutils.Aggregators;
-import com.turn.splicer.tsdbutils.SeekableView;
+import net.opentsdb.core.AggregationIterator;
+import net.opentsdb.core.Aggregator;
+import net.opentsdb.core.Aggregators;
+import net.opentsdb.core.SeekableView;
 
 /**
  * Identical to AggregationIterator except for how it handles edges of a Span.

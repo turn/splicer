@@ -17,7 +17,7 @@
 package com.turn.splicer.tsdbutils;
 
 import com.turn.splicer.merge.TsdbResult;
-import com.turn.splicer.tsdbutils.expression.AggregationIterator;
+import net.opentsdb.core.AggregationIterator;
 import com.turn.splicer.tsdbutils.expression.EndpointAligningAggregationIterator;
 import com.turn.splicer.tsdbutils.expression.Expression;
 import com.turn.splicer.tsdbutils.expression.SeekableViewDataPointImpl;
@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import net.opentsdb.core.Aggregators;
+import net.opentsdb.core.DataPoint;
+import net.opentsdb.core.SeekableView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -20,12 +20,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.stumbleupon.async.Deferred;
 import com.turn.splicer.merge.TsdbResult;
-import com.turn.splicer.tsdbutils.*;
+import net.opentsdb.core.*;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

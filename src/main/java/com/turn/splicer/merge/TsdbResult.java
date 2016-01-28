@@ -16,8 +16,8 @@
 
 package com.turn.splicer.merge;
 
-import com.turn.splicer.tsdbutils.DataPoint;
-import com.turn.splicer.tsdbutils.MutableDataPoint;
+import net.opentsdb.core.DataPoint;
+import net.opentsdb.core.MutableDataPoint;
 import com.turn.splicer.tsdbutils.expression.BadNumberException;
 
 import javax.annotation.Nonnull;

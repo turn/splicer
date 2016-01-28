@@ -20,6 +20,7 @@ import com.turn.splicer.merge.TsdbResult;
 import com.turn.splicer.tsdbutils.expression.ExpressionTree;
 import com.turn.splicer.tsdbutils.expression.parser.ParseException;
 import com.turn.splicer.tsdbutils.expression.parser.SyntaxChecker;
+import net.opentsdb.tsd.BadRequestException;
 
 import java.io.IOException;
 import java.io.StringReader;

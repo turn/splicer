@@ -16,8 +16,8 @@
 
 package com.turn.splicer.tsdbutils.expression;
 
-import com.turn.splicer.tsdbutils.DataPoint;
-import com.turn.splicer.tsdbutils.SeekableView;
+import net.opentsdb.core.DataPoint;
+import net.opentsdb.core.SeekableView;
 
 /**
  * Implementation of SeekableView Interface to wrap around

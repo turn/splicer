@@ -10,7 +10,9 @@
 // General Public License for more details.  You should have received a copy
 // of the GNU Lesser General Public License along with this program.  If not,
 // see <http://www.gnu.org/licenses/>.
-package com.turn.splicer.tsdbutils;
+package net.opentsdb.core;
+
+import net.opentsdb.core.DataPoint;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -36,39 +38,39 @@ import java.util.NoSuchElementException;
  */
 public interface SeekableView extends Iterator<DataPoint> {
 
-	/**
-	 * Returns {@code true} if this view has more elements.
-	 */
-	boolean hasNext();
+  /**
+   * Returns {@code true} if this view has more elements.
+   */
+  boolean hasNext();
 
-	/**
-	 * Returns a <em>view</em> on the next data point.
-	 * No new object gets created, the referenced returned is always the same
-	 * and must not be stored since its internal data structure will change the
-	 * next time {@code next()} is called.
-	 *
-	 * @throws NoSuchElementException if there were no more elements to iterate
-	 *                                on (in which case {@link #hasNext} would have returned {@code false}.
-	 */
-	DataPoint next();
+  /**
+   * Returns a <em>view</em> on the next data point.
+   * No new object gets created, the referenced returned is always the same
+   * and must not be stored since its internal data structure will change the
+   * next time {@code next()} is called.
+   *
+   * @throws NoSuchElementException if there were no more elements to iterate
+   *                                on (in which case {@link #hasNext} would have returned {@code false}.
+   */
+  DataPoint next();
 
-	/**
-	 * Unsupported operation.
-	 *
-	 * @throws UnsupportedOperationException always.
-	 */
-	void remove();
+  /**
+   * Unsupported operation.
+   *
+   * @throws UnsupportedOperationException always.
+   */
+  void remove();
 
-	/**
-	 * Advances the iterator to the given point in time.
-	 * <p/>
-	 * This allows the iterator to skip all the data points that are strictly
-	 * before the given timestamp.
-	 *
-	 * @param timestamp A strictly positive 32 bit UNIX timestamp (in seconds).
-	 * @throws IllegalArgumentException if the timestamp is zero, or negative,
-	 *                                  or doesn't fit on 32 bits (think "unsigned int" -- yay Java!).
-	 */
-	void seek(long timestamp);
+  /**
+   * Advances the iterator to the given point in time.
+   * <p/>
+   * This allows the iterator to skip all the data points that are strictly
+   * before the given timestamp.
+   *
+   * @param timestamp A strictly positive 32 bit UNIX timestamp (in seconds).
+   * @throws IllegalArgumentException if the timestamp is zero, or negative,
+   *                                  or doesn't fit on 32 bits (think "unsigned int" -- yay Java!).
+   */
+  void seek(long timestamp);
 
 }

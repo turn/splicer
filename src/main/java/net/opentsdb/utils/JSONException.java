@@ -10,7 +10,7 @@
 // General Public License for more details.  You should have received a copy
 // of the GNU Lesser General Public License along with this program.  If not,
 // see <http://www.gnu.org/licenses/>.
-package com.turn.splicer.tsdbutils;
+package net.opentsdb.utils;
 
 /**
  * Exception class used to wrap the myriad of typed exceptions thrown by
@@ -20,35 +20,35 @@ package com.turn.splicer.tsdbutils;
  */
 public final class JSONException extends RuntimeException {
 
-	/**
-	 * Constructor.
-	 *
-	 * @param msg The message of the exception, potentially including a stack
-	 *            trace.
-	 */
-	public JSONException(final String msg) {
-		super(msg);
-	}
+  /**
+   * Constructor.
+   *
+   * @param msg The message of the exception, potentially including a stack
+   *            trace.
+   */
+  public JSONException(final String msg) {
+    super(msg);
+  }
 
-	/**
-	 * Constructor.
-	 *
-	 * @param cause The exception that caused this one to be thrown.
-	 */
-	public JSONException(final Throwable cause) {
-		super(cause);
-	}
+  /**
+   * Constructor.
+   *
+   * @param cause The exception that caused this one to be thrown.
+   */
+  public JSONException(final Throwable cause) {
+    super(cause);
+  }
 
-	/**
-	 * Constructor.
-	 *
-	 * @param msg   The message of the exception, potentially including a stack
-	 *              trace.
-	 * @param cause The exception that caused this one to be thrown.
-	 */
-	public JSONException(final String msg, final Throwable cause) {
-		super(msg, cause);
-	}
+  /**
+   * Constructor.
+   *
+   * @param msg   The message of the exception, potentially including a stack
+   *              trace.
+   * @param cause The exception that caused this one to be thrown.
+   */
+  public JSONException(final String msg, final Throwable cause) {
+    super(msg, cause);
+  }
 
-	private static final long serialVersionUID = 1365518940;
+  private static final long serialVersionUID = 1365518940;
 }
