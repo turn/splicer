@@ -15,16 +15,14 @@ package net.opentsdb.utils;
 /**
  * Exception class used to wrap the myriad of typed exceptions thrown by
  * Jackson.
- *
  * @since 2.0
  */
 public final class JSONException extends RuntimeException {
 
   /**
    * Constructor.
-   *
    * @param msg The message of the exception, potentially including a stack
-   *            trace.
+   * trace.
    */
   public JSONException(final String msg) {
     super(msg);
@@ -32,7 +30,6 @@ public final class JSONException extends RuntimeException {
 
   /**
    * Constructor.
-   *
    * @param cause The exception that caused this one to be thrown.
    */
   public JSONException(final Throwable cause) {
@@ -41,9 +38,8 @@ public final class JSONException extends RuntimeException {
 
   /**
    * Constructor.
-   *
-   * @param msg   The message of the exception, potentially including a stack
-   *              trace.
+   * @param msg The message of the exception, potentially including a stack
+   * trace.
    * @param cause The exception that caused this one to be thrown.
    */
   public JSONException(final String msg, final Throwable cause) {
