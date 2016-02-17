@@ -12,9 +12,6 @@
 // see <http://www.gnu.org/licenses/>.
 package net.opentsdb.core;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 /** Constants used in various places.  */
 public final class Const {
 
@@ -41,6 +38,7 @@ public final class Const {
     }
     MAX_NUM_TAGS = tags;
   }
+
 
   /** Number of LSBs in time_deltas reserved for flags.  */
   public static final short FLAG_BITS = 4;
@@ -150,7 +148,7 @@ public final class Const {
    * ONLY change this value in your configs if you are starting out with a brand
    * new install or set of tables. Users wanted this, lets hope they don't
    * regret it.
-   * @param width The number of bytes of salt to use
+   * @param buckets The number of bytes of salt to use
    * @throws IllegalArgumentException if width < 0 or > 8
    */
   static void setSaltWidth(final int width) {
