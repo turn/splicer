@@ -20,24 +20,18 @@ public final class MutableDataPoint implements DataPoint {
 
   // NOTE: Fields are not final to make an instance available to store a new
   // pair of a timestamp and a value to reduce memory burden.
-  /**
-   * The timestamp of the value.
-   */
+  /** The timestamp of the value. */
   private long timestamp = Long.MAX_VALUE;
-  /**
-   * True if the value is stored as a long.
-   */
+  /** True if the value is stored as a long. */
   private boolean is_integer = true;
-  /**
-   * A long value or a double encoded on a long if {@code is_integer} is false.
-   */
+  /** A long value or a double encoded on a long if {@code is_integer} is false. */
   private long value = 0;
 
   /**
    * Resets with a new pair of a timestamp and a double value.
    *
    * @param timestamp A timestamp.
-   * @param value     A double value.
+   * @param value A double value.
    */
   public void reset(final long timestamp, final double value) {
     this.timestamp = timestamp;
@@ -49,7 +43,7 @@ public final class MutableDataPoint implements DataPoint {
    * Resets with a new pair of a timestamp and a long value.
    *
    * @param timestamp A timestamp.
-   * @param value     A double value.
+   * @param value A double value.
    */
   public void reset(final long timestamp, final long value) {
     this.timestamp = timestamp;
@@ -76,7 +70,7 @@ public final class MutableDataPoint implements DataPoint {
    * Resets with a new pair of a timestamp and a double value.
    *
    * @param timestamp A timestamp.
-   * @param value     A double value.
+   * @param value A double value.
    */
   public static MutableDataPoint ofDoubleValue(final long timestamp,
                                                final double value) {
@@ -89,7 +83,7 @@ public final class MutableDataPoint implements DataPoint {
    * Resets with a new pair of a timestamp and a long value.
    *
    * @param timestamp A timestamp.
-   * @param value     A double value.
+   * @param value A double value.
    */
   public static MutableDataPoint ofLongValue(final long timestamp,
                                              final long value) {
