@@ -13,9 +13,6 @@
 
 package net.opentsdb.core;
 
-import com.turn.splicer.Const;
-import com.turn.splicer.tsdbutils.expression.BadNumberException;
-
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 

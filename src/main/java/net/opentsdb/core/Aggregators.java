@@ -13,7 +13,6 @@
 package net.opentsdb.core;
 
 import com.google.common.base.Preconditions;
-import com.turn.splicer.tsdbutils.*;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.apache.commons.math3.stat.descriptive.rank.Percentile.EstimationType;
 import org.apache.commons.math3.util.ResizableDoubleArray;
