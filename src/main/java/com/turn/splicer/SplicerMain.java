@@ -29,6 +29,8 @@ public class SplicerMain {
 	private static final int TSD_START_PORT = Config.get().getInt("tsd.start.port");
 	private static final int TSD_END_PORT = Config.get().getInt("tsd.end.port");
 
+	private static final int TSD_QUERIES_PER_PORT = Config.get().getInt("tsd.queries.per.port", 1);
+
 	public static void main(String[] args) throws InterruptedException {
 
 		if (Config.get().getBoolean("tsd.connect.enable")) {
@@ -43,7 +45,11 @@ public class SplicerMain {
 					if (HttpWorker.TSDMap.get(TSD) == null) {
 						HttpWorker.TSDMap.put(TSD, new LinkedBlockingQueue<String>());
 					}
-					HttpWorker.TSDMap.get(TSD).put(r);
+
+					//with load balancer we actually have 10 tsdb instances behind each port
+					for(int j = 0; j < TSD_QUERIES_PER_PORT; j++) {
+						HttpWorker.TSDMap.get(TSD).put(r);
+					}
 					LOG.info("Registering {}", r);
 				}
 			}

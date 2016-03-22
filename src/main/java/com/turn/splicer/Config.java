@@ -52,6 +52,21 @@ public class Config {
 		return Integer.parseInt(properties.getProperty(field));
 	}
 
+	/**
+	 * Read an integer from the config file
+	 * @param field property name
+	 * @param defaultVal default to return if no property
+	 * @return integer or defaultVal if property doesn't exist or is not an
+	 * 			integer
+	 */
+	public int getInt(String field, int defaultVal) {
+		try {
+			return Integer.parseInt(properties.getProperty(field));
+		} catch (NumberFormatException e) {
+			return defaultVal;
+		}
+	}
+
 	public boolean getBoolean(String field) {
 		return Boolean.parseBoolean(properties.getProperty(field));
 	}
