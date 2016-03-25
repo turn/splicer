@@ -20,6 +20,8 @@ import net.opentsdb.core.AggregationIterator;
 import net.opentsdb.core.Aggregator;
 import net.opentsdb.core.Aggregators;
 import net.opentsdb.core.SeekableView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Identical to AggregationIterator except for how it handles edges of a Span.
@@ -38,6 +40,7 @@ import net.opentsdb.core.SeekableView;
  *  @author Brian Peltz
  */
 public class EndpointAligningAggregationIterator extends AggregationIterator {
+	private static final Logger LOG = LoggerFactory.getLogger(AggregationIterator.class);
 
 	public EndpointAligningAggregationIterator(SeekableView[] iterators, long start_time, long end_time, Aggregator aggregator, Aggregators.Interpolation method, boolean rate) {
 		super(iterators, start_time, end_time, aggregator, method, rate);
@@ -98,10 +101,10 @@ public class EndpointAligningAggregationIterator extends AggregationIterator {
 			// As long as any of the iterators has a data point with a timestamp
 			// that falls within our interval, we know we have at least one next.
 			if ((timestamps[size + i] & TIME_MASK) > end_time) {
-				LOG.debug("Total aggregationTime=" + (aggregationTimeInNanos / (1000 * 1000)) + "ms.");
-				LOG.debug("Total interpolationTime=" + (interpolationTimeInNanos / (1000 * 1000)) + "ms.");
-				LOG.debug("Total downSampleTime=" + (downsampleTimeInNanos / (1000 * 1000)) + "ms.");
-				LOG.debug("Total moveToNextTime=" + (moveToNextTimeInNanos / (1000 * 1000)) + "ms.");
+				//LOG.debug("Total aggregationTime=" + (aggregationTimeInNanos / (1000 * 1000)) + "ms.");
+				//LOG.debug("Total interpolationTime=" + (interpolationTimeInNanos / (1000 * 1000)) + "ms.");
+				//LOG.debug("Total downSampleTime=" + (downsampleTimeInNanos / (1000 * 1000)) + "ms.");
+				//LOG.debug("Total moveToNextTime=" + (moveToNextTimeInNanos / (1000 * 1000)) + "ms.");
 				//LOG.debug("No hasNext (return false)");
 				return false;
 			}

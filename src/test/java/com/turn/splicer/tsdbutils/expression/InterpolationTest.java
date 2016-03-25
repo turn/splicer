@@ -21,6 +21,7 @@ import com.google.common.collect.Maps;
 import com.stumbleupon.async.Deferred;
 import com.turn.splicer.merge.TsdbResult;
 import net.opentsdb.core.*;
+import net.opentsdb.meta.Annotation;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,6 +139,11 @@ public class InterpolationTest {
     }
 
     @Override
+    public byte[] metricUID() {
+      return new byte[0];
+    }
+
+    @Override
     public Map<String, String> getTags() {
       Map<String, String> p = Maps.newHashMap();
       p.put("tagk", "tagv");
@@ -147,6 +153,11 @@ public class InterpolationTest {
     @Override
     public Deferred<Map<String, String>> getTagsAsync() {
       return Deferred.fromResult(getTags());
+    }
+
+    @Override
+    public org.hbase.async.Bytes.ByteMap<byte[]> getTagUids() {
+      return null;
     }
 
     @Override
@@ -160,7 +171,17 @@ public class InterpolationTest {
     }
 
     @Override
+    public List<byte[]> getAggregatedTagUids() {
+      return null;
+    }
+
+    @Override
     public List<String> getTSUIDs() {
+      return null;
+    }
+
+    @Override
+    public List<Annotation> getAnnotations() {
       return null;
     }
 
@@ -197,6 +218,11 @@ public class InterpolationTest {
     @Override
     public double doubleValue(int i) {
       throw new RuntimeException("not implemented");
+    }
+
+    @Override
+    public int getQueryIndex() {
+      return 0;
     }
   }
 

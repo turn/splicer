@@ -44,8 +44,6 @@ public class ExpressionFactory {
 		availableFunctions.put("multiply", new Functions.MultiplySeriesFunction());
 		availableFunctions.put("divide", new Functions.DivideSeriesFunction());
 		availableFunctions.put("movingAverage", new Functions.MovingAverageFunction());
-		availableFunctions.put("highestCurrent", new Functions.HighestCurrent());
-		availableFunctions.put("highestMax", new Functions.HighestMax());
 		availableFunctions.put("abs", new Functions.AbsoluteValueFunction());
 		availableFunctions.put("timeShift", new Functions.TimeShiftFunction());
 	}
